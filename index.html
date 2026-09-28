@@ -41,7 +41,7 @@ a{color:var(--accent)}
 .ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
 .field{display:flex;flex-direction:column;gap:5px}
 label,.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
-select,input[type="number"]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px}
+select,input[type="number"],input[type="date"]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px}
 button,.btn{font:inherit;font-weight:600;font-size:13px;border-radius:5px;padding:7px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 button.ghost,.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
 button:disabled{opacity:.5;cursor:default}
@@ -95,10 +95,15 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
     <div class="ctl">
       <div class="field"><label for="base">Mapa base</label>
         <select id="base"><option value="carto">Gris claro (Esri)</option><option value="osm">Calles (OpenStreetMap)</option><option value="sat">Satélite (Esri)</option><option value="none">Sin mapa base</option></select></div>
+      <div class="field"><label for="meth">Superficie</label>
+        <select id="meth"><option value="idw" selected>Zonas IDW por clases</option><option value="thiessen">Polígonos de Thiessen</option></select></div>
       <div class="field"><label for="pw">Interpolación IDW · potencia</label>
         <select id="pw"><option>1</option><option selected>2</option><option>3</option></select></div>
       <div class="field"><label for="res">Resolución PNG</label>
         <select id="res"><option value="1.5">2250 × 1500 px</option><option value="2">3000 × 2000 px</option><option value="3">4500 × 3000 px</option><option value="5.12" selected>8K · 7680 × 5120 px</option></select></div>
+      <div class="field"><label for="p0">Periodo de muestreo · desde</label><input type="date" id="p0"></div>
+      <div class="field"><label for="p1">hasta</label><input type="date" id="p1"></div>
+      <button type="button" class="ghost" id="pall">Todo el periodo</button>
       <label class="check"><input type="checkbox" id="labels" checked> Mostrar valores en los puntos</label>
     </div>
   </section>
@@ -107,12 +112,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
     <div class="ctl" style="justify-content:space-between">
       <div style="display:flex;flex-direction:column;gap:4px;min-width:0;max-width:70ch">
         <h2>Copernicus Sentinel-2</h2>
-        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 20 m. Calcula el MNDWI (humedad superficial y agua abierta, MNDWI &gt; 0), el NDCI (clorofila, proxy de eutrofización) y el NDTI (turbiedad y sedimentos relativos) dentro de cada humedal. En estos humedales la lámina de agua está casi toda cubierta de vegetación, así que los índices describen una superficie mixta de agua y vegetación. Se usa en los planos 2, 9, 10 y 16 con el selector «Fuente».</p>
+        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Calcula el MNDWI (humedad superficial y agua abierta, MNDWI &gt; 0), el NDCI (clorofila, proxy de eutrofización) y el NDTI (turbiedad y sedimentos relativos) dentro de cada humedal. En estos humedales la lámina de agua está casi toda cubierta de vegetación, así que los índices describen una superficie mixta de agua y vegetación. Se usa en los planos 2, 9, 10 y 16 con el selector «Fuente».</p>
         <span class="status" id="satstatus">Esperando…</span>
       </div>
       <div class="ctl">
         <div class="field"><label for="sd0">Desde</label><input type="date" id="sd0" value="2025-09-27"></div>
         <div class="field"><label for="sd1">Hasta</label><input type="date" id="sd1" value="2026-09-27"></div>
+        <div class="field"><label for="sres">Píxel</label><select id="sres"><option value="10" selected>10 m</option><option value="20">20 m</option></select></div>
         <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
         <button type="button" id="satrun">Recalcular</button>
       </div>
@@ -125,8 +131,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
   <section class="panel">
     <h2>Fuentes</h2>
     <ul class="sources" id="fuentes"></ul>
-    <p class="hint">Polígonos de humedales: OpenStreetMap (© colaboradores de OpenStreetMap, ODbL). Perímetro: perimetro_kennedy_polygon2.kml. Los valores por punto vienen de <code>data/muestreo_real.csv</code>; cada fila indica su fuente y la tabla o página del documento. Las celdas vacías significan que la fuente no reporta esa variable, y el plano lo muestra como «sin dato».</p>
-    <p class="hint">Interpolación: distancia inversa ponderada (IDW) con todos los puntos, sobre todo el perímetro de estudio. Plano 18: densidad de kernel gaussiano (radio 250 m) en puntos/km². Los índices Sentinel-2 cubren todo el perímetro a 20 m.</p>
+    <p class="hint">Polígonos de humedales: OpenStreetMap (© colaboradores de OpenStreetMap, ODbL). Perímetro: perimetro_kennedy_polygon2.kml. Los valores por punto vienen de <code>data/muestreo_real.csv</code>; cada fila indica su fuente y la tabla o página del documento. Las celdas vacías significan que la fuente no reporta esa variable. Los valores censurados (&lt;0,28, &gt;5700) se interpolan con el límite reportado y se rotulan tal como vienen. Si un punto tiene varias mediciones en el periodo elegido, se promedian.</p>
+    <p class="hint">Superficies: IDW con todos los puntos (o polígonos de Thiessen) sobre todo el perímetro, representadas en clases por cuantiles con colores sólidos e isolíneas en cada límite de clase, sin suavizado. Los índices Sentinel-2 se dibujan píxel a píxel a 10 m sobre todo el perímetro.</p>
   </section>
 </div>
 
@@ -174,11 +180,11 @@ const V = [
   {n:12, t:'Grasas y aceites', v:'concentración', u:'mg/L', col:'grasas_aceites', dec:1,
    d:'Externalidad concreta cerca de Corabastos: permite estudiar una fuente más específica que «agua sucia».',
    ramp:['#fee838','#a59c74','#575d6d','#00224e']},
-  {n:13, t:'Coliformes fecales', v:'NMP/100 ml', u:'NMP/100 ml', col:'coliformes_fecales', dec:0, log:true,
-   d:'Detecta contaminación microbiológica y posibles aportes sanitarios. Escala logarítmica.',
+  {n:13, t:'Coliformes fecales', v:'termotolerantes', u:'NMP o UFC/100 ml', col:'coliformes_fecales', dec:0, log:true,
+   d:'Detecta contaminación microbiológica y posibles aportes sanitarios. Escala logarítmica. Las fuentes de 2006-2018 reportan UFC/100 ml y las de 2022 NMP/100 ml.',
    ramp:['#fcfdbf','#fc8961','#b73779','#51127c','#000004']},
-  {n:14, t:'Coliformes totales', v:'NMP/100 ml', u:'NMP/100 ml', col:'coliformes_totales', dec:0, log:true,
-   d:'Complementa el anterior y permite mapear presión sanitaria. Escala logarítmica.',
+  {n:14, t:'Coliformes totales', v:'totales', u:'NMP o UFC/100 ml', col:'coliformes_totales', dec:0, log:true,
+   d:'Complementa el anterior y permite mapear presión sanitaria. Escala logarítmica. Las fuentes de 2006-2018 reportan UFC/100 ml y las de 2022 NMP/100 ml.',
    ramp:['#f0f921','#f89540','#cc4778','#7e03a8','#0d0887']},
   {n:15, t:'Profundidad de lámina de agua', v:'profundidad', u:'m', col:'profundidad', dec:2,
    d:'Relaciona hidrología con hábitat, concentración de contaminantes y estacionalidad.',
@@ -189,15 +195,15 @@ const V = [
   {n:17, t:'Nivel freático', v:'profundidad del nivel freático', u:'m', col:'nivel_freatico', dec:2,
    d:'Ayuda a explicar conexiones entre suelo saturado, humedal y urbanización.',
    ramp:['#f7fcfd','#9ebcda','#8c6bb1','#4d004b']},
-  {n:18, t:'Conexiones erradas / vertimientos', v:'número de conexiones o puntos', u:'puntos/km²', col:'conexiones', dec:1, mode:'density',
-   d:'Espacializa las posibles fuentes, no solo los efectos. Densidad de kernel sobre todo el perímetro.',
+  {n:18, t:'Conexiones erradas / vertimientos', v:'conexiones erradas identificadas por área de aporte (EAAB)', u:'conexiones', col:'conexiones', dec:0,
+   d:'Espacializa las posibles fuentes, no solo los efectos. Las fuentes reportan el total de conexiones identificadas en el área de aporte de cada humedal, no su ubicación individual.',
    ramp:['#fef3c7','#f59e0b','#b91c1c','#1c1917']},
-  {n:19, t:'Caudal de entrada', v:'caudal', u:'L/s', col:'caudal', dec:1,
-   d:'Relaciona entradas hídricas con dilución o concentración de contaminantes.',
+  {n:19, t:'Caudal de entrada', v:'caudal pico de diseño Tr = 3 años (modelado en los PMA)', u:'L/s', col:'caudal', dec:0,
+   d:'Relaciona entradas hídricas con dilución o concentración de contaminantes. Ninguna fuente reporta caudales medidos: estos son caudales pico modelados por entrega, útiles como magnitud relativa.',
    ramp:['#e0f7fa','#4dd0e1','#00838f','#002b2e']},
   {n:20, t:'Carga contaminante', v:'concentración × caudal', u:'kg/día', dec:1, alt:{label:'Concentración', opts:[['dbo5','DBO5'],['dqo','DQO'],['sst','SST'],['p_total','P total'],['ntk','NTK'],['grasas_aceites','Grasas y aceites']]},
    calcAlt:(r,c)=>(isNum(r[c])&&isNum(r.caudal))?r[c]*r.caudal*0.0864:NaN,
-   d:'Muestra cuánto contaminante entra realmente al sistema: concentración (mg/L) × caudal (L/s) × 0,0864.',
+   d:'Cuánto contaminante entra al sistema: concentración (mg/L) × caudal (L/s) × 0,0864. Solo se calcula donde una misma fila trae concentración y caudal; en las fuentes actuales no coinciden, así que queda sin dato.',
    ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']}
 ];
 const GROUPS = { 'La Vaca Norte':'La Vaca', 'La Vaca Sur':'La Vaca', 'El Burro':'El Burro', 'Techo':'Techo' };
@@ -211,7 +217,7 @@ const $ = id => document.getElementById(id);
 const S = {
   rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
   perim: window.PERIMETRO, hum: window.HUMEDALES,
-  base: 'carto', pw: 2, labels: true, alt: {5:'ntk', 20:'dbo5'}, src: {2:'campo', 9:'campo', 10:'campo', 16:'sat'}
+  base: 'carto', method: 'idw', pw: 2, labels: true, alt: {5:'ntk', 20:'dbo5'}, src: {2:'campo', 9:'campo', 10:'campo', 16:'sat'}
 };
 
 // ---------------- CSV ----------------
@@ -234,7 +240,12 @@ function parseCSV(text){
     const o = {};
     head.forEach((h, i) => {
       let v = (r[i] ?? '').trim();
-      if (NUMCOLS.includes(h)){ v = v.replace(/\s/g,''); if (delim === ';') v = v.replace(',', '.'); o[h] = v === '' ? NaN : +v; }
+      if (NUMCOLS.includes(h)){
+        v = v.replace(/\s/g,''); if (delim === ';') v = v.replace(',', '.');
+        const m = v.match(/^([<>])(.*)$/);           // censored value, e.g. <0.28 or >5700
+        if (m){ o[h + '_txt'] = m[1] + m[2]; v = m[2]; }
+        o[h] = v === '' ? NaN : +v;
+      }
       else o[h] = v;
     });
     return o;
@@ -269,6 +280,36 @@ function featureOf(row){
   return best;
 }
 
+// ---------------- classes ----------------
+function niceNum(x){ const e = 10 ** Math.floor(Math.log10(x)), f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; }
+function round2(v){ if (v === 0) return 0; const e = 10 ** (Math.floor(Math.log10(Math.abs(v))) - 1); return Math.round(v / e) * e; }
+// class edges covering [lo, hi]; in log space for coliforms (edges are log10 values)
+function classBreaks(lo, hi, log){
+  if (log){
+    const n = Math.max(3, Math.min(6, Math.ceil(hi - lo) + 1));
+    const e = Array.from({ length: n + 1 }, (_, i) => Math.log10(Math.max(1, round2(10 ** (lo + (hi - lo) * i / n)))));
+    e[0] = Math.min(e[0], lo); e[n] = Math.max(e[n], hi);
+    return [...new Set(e)];
+  }
+  if (hi - lo < 1e-12) return [lo - .5, hi + .5];
+  const step = niceNum((hi - lo) / 6), a = Math.floor(lo / step) * step, out = [];
+  for (let v = a; v < hi + step * .999; v += step) out.push(+v.toPrecision(12));
+  if (out[out.length - 1] < hi) out.push(out[out.length - 1] + step);
+  return out;
+}
+// quantile classes (up to 5) from the sample values; interior edges rounded to 2 significant figures
+function quantBreaks(tv, log){
+  const v = [...tv].sort((a, b) => a - b), n = Math.min(5, v.length);
+  if (v[0] === v[v.length - 1]) return [v[0] - .5, v[0] + .5];
+  const q = p => { const i = (v.length - 1) * p, a = Math.floor(i); return v[a] + (v[Math.min(v.length - 1, a + 1)] - v[a]) * (i - a); };
+  const r = x => log ? Math.log10(Math.max(1, round2(10 ** x))) : round2(x);
+  const e = [v[0]];
+  for (let i = 1; i < n; i++){ const x = r(q(i / n)); if (x > e[e.length - 1] && x < v[v.length - 1]) e.push(x); }
+  e.push(v[v.length - 1]);
+  return e;
+}
+function classOfValue(cls, v){ let i = 0; while (i < cls.length - 1 && v >= cls[i + 1].a) i++; return i; }
+
 // ---------------- color ----------------
 const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
 function rampFn(stops){
@@ -276,6 +317,31 @@ function rampFn(stops){
   return u => { u = Math.max(0, Math.min(1, u)) * (c.length - 1); const i = Math.min(c.length - 2, Math.floor(u)), f = u - i; return [0,1,2].map(k => Math.round(c[i][k] + (c[i+1][k] - c[i][k]) * f)); };
 }
 const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;
+
+// ---------------- period ----------------
+function rowSpan(r){
+  const f = String(r.fecha || '');
+  const ds = f.match(/\d{4}(?:-(?:0[1-9]|1[0-2])(?:-[0-3]\d)?)?(?!\d)/g);
+  if (!ds) return null;
+  const lo = ds[0], hi = ds[ds.length - 1];
+  const lastDay = ym => String(new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate()).padStart(2, '0');
+  const start = lo.length === 4 ? lo + '-01-01' : lo.length === 7 ? lo + '-01' : lo;
+  const end = hi.length === 4 ? hi + '-12-31' : hi.length === 7 ? hi + '-' + lastDay(hi) : hi;
+  return [start, end];
+}
+function activeRows(){
+  const a = $('p0').value || '0000-01-01', b = $('p1').value || '9999-12-31';
+  return S.rows.filter(r => { const sp = rowSpan(r); return !sp || (sp[1] >= a && sp[0] <= b); });
+}
+function dataSpan(){
+  const sp = S.rows.map(rowSpan).filter(Boolean);
+  if (!sp.length) return ['', ''];
+  return [sp.map(s => s[0]).sort()[0], sp.map(s => s[1]).sort().pop()];
+}
+function periodText(){
+  const a = $('p0').value, b = $('p1').value;
+  return a || b ? `Periodo ${a || '…'} a ${b || '…'}` : 'Todo el periodo';
+}
 
 // ---------------- values ----------------
 function valueOf(def, r){
@@ -292,7 +358,7 @@ function subOf(def){
 }
 function fmt(v, dec){
   if (!isNum(v)) return '–';
-  if (Math.abs(v) >= 1e5) return v.toExponential(1).replace('e+', '×10^');
+  if (Math.abs(v) >= 1e5){ const [m, e] = v.toExponential(1).split('e+'); return m.replace('.', ',') + '×10' + [...e].map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join(''); }
   return v.toLocaleString('es-CO', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
@@ -325,7 +391,7 @@ async function render(canvas, def, k){
   const P = S.perim;
   const lons = P.map(p => p[0]), lats = P.map(p => p[1]);
   const b = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
-  const pad = 40, z0 = 0;
+  const pad = 84, z0 = 0;
   const wx = mx(b[2], z0) - mx(b[0], z0), wy = my(b[1], z0) - my(b[3], z0);
   const zf = Math.log2(Math.min((MW - 2 * pad) / wx, (LH - 2 * pad) / wy));
   const cx = (mx(b[0], zf) + mx(b[2], zf)) / 2, cy = (my(b[1], zf) + my(b[3], zf)) / 2;
@@ -355,10 +421,11 @@ async function render(canvas, def, k){
   ctx.fillStyle = 'rgba(236,238,233,0.82)'; ctx.fill('evenodd');
 
   const finish = () => {
-    northArrow(ctx, MW - 52, 60);
-    scaleBar(ctx, 34, LH - 44, mpp);
+    frame(ctx, { zf, cx, cy });
+    northArrow(ctx, MW - FR - 44, FR + 46);
+    scaleBar(ctx, FR + 24, LH - FR - 26, mpp);
     ctx.fillStyle = '#4a5550'; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - 10, LH - 10);
+    ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - FR - 8, LH - FR - 8);
   };
 
   // --- satellite mode
@@ -369,7 +436,10 @@ async function render(canvas, def, k){
 
   // --- data
   const ramp = rampFn(def.ramp);
-  const pts = S.rows.map(r => ({ r, v: valueOf(def, r), f: featureOf(r) })).filter(p => isNum(p.v));
+  // one value per location: mean of the samples inside the selected period
+  const byLoc = new Map();
+  for (const r of activeRows()){ const v = valueOf(def, r); if (!isNum(v)) continue; const key = r.lat.toFixed(5) + ',' + r.lon.toFixed(5); const o = byLoc.get(key) || byLoc.set(key, { r, sum: 0, n: 0, src: new Set() }).get(key); o.sum += v; o.n++; if (r.fuente) o.src.add(r.fuente); }
+  const pts = [...byLoc.values()].map(o => ({ r: o.r, v: o.sum / o.n, n: o.n, src: o.src, f: featureOf(o.r) }));
   pts.forEach(p => { p.x = X(p.r.lon); p.y = Y(p.r.lat); });
   let lo = Infinity, hi = -Infinity;
   const tr = v => def.log ? Math.log10(Math.max(v, 1e-9)) : v;
@@ -378,63 +448,74 @@ async function render(canvas, def, k){
   const pathOf = f => { const p = new Path2D(); for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(X(c[0]), Y(c[1])) : p.moveTo(X(c[0]), Y(c[1]))); p.closePath(); } return p; };
   const hatch = (() => { const c = document.createElement('canvas'); c.width = c.height = 8; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, 8); g.lineTo(8, 0); g.stroke(); return ctx.createPattern(c, 'repeat'); })();
 
-  let grid = null; // for density
-  if (def.mode === 'density'){
-    // kernel density in points/km² over the perimeter
-    const h = 250 / mpp, step = 4;
-    grid = { step, w: Math.ceil(MW / step), hgt: Math.ceil(LH / step) };
-    grid.v = new Float32Array(grid.w * grid.hgt);
-    const norm = 1e6 / (2 * Math.PI * 250 * 250);
-    for (let gy = 0; gy < grid.hgt; gy++) for (let gx = 0; gx < grid.w; gx++){
-      const x = gx * step + step / 2, y = gy * step + step / 2; let s = 0;
-      for (const p of pts){ const d2 = ((x - p.x) ** 2 + (y - p.y) ** 2) / (h * h); if (d2 < 16) s += p.v * Math.exp(-d2 / 2); }
-      grid.v[gy * grid.w + gx] = s * norm;
+  // --- continuous field over the study perimeter, drawn as discrete classes with isolines
+  const peri = new Path2D(); P.forEach((p, i) => i ? peri.lineTo(X(p[0]), Y(p[1])) : peri.moveTo(X(p[0]), Y(p[1]))); peri.closePath();
+  let classes = null;
+  if (!pts.length){
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(peri); ctx.fillStyle = hatch; ctx.fill(peri);
+    lo = 0; hi = 1;
+  } else {
+    const step = Math.max(0.5, Math.min(2, 2 / k));
+    const gw = Math.ceil(MW / step) + 1, gh = Math.ceil(LH / step) + 1;
+    const PR = P.map(p => [X(p[0]), Y(p[1])]);
+    const px0 = Math.min(...PR.map(p => p[0])), px1 = Math.max(...PR.map(p => p[0])), py0 = Math.min(...PR.map(p => p[1])), py1 = Math.max(...PR.map(p => p[1]));
+    const F = new Float32Array(gw * gh).fill(NaN);
+    const tv = pts.map(p => tr(p.v)), half = S.pw / 2;
+    const dens = def.mode === 'density', h2 = (250 / mpp) ** 2, norm = 1e6 / (2 * Math.PI * 250 * 250);
+    const thiessen = S.method === 'thiessen' && !dens;
+    if (!dens){ lo = Math.min(...tv); hi = Math.max(...tv); if (hi === lo){ hi += 0.5; lo -= 0.5; } }
+    for (let j = 0; j < gh; j++){
+      const y = j * step; if (y < py0 - step || y > py1 + step) continue;
+      for (let i = 0; i < gw; i++){
+        const x = i * step; if (x < px0 - step || x > px1 + step) continue;
+        let v;
+        if (dens){ let s = 0; for (let q = 0; q < pts.length; q++){ const d2 = ((x - pts[q].x) ** 2 + (y - pts[q].y) ** 2) / h2; if (d2 < 16) s += pts[q].v * Math.exp(-d2 / 2); } v = s * norm; }
+        else if (thiessen){ let bd = Infinity; for (let q = 0; q < pts.length; q++){ const d2 = (x - pts[q].x) ** 2 + (y - pts[q].y) ** 2; if (d2 < bd){ bd = d2; v = tv[q]; } } }
+        else { let sw = 0, sv = 0; v = null; for (let q = 0; q < pts.length; q++){ const d2 = (x - pts[q].x) ** 2 + (y - pts[q].y) ** 2; if (d2 < 1e-6){ v = tv[q]; break; } const w = 1 / d2 ** half; sw += w; sv += w * tv[q]; } if (v === null) v = sv / sw; }
+        F[j * gw + i] = v;
+      }
     }
-    lo = 0; hi = Math.max(1e-9, ...grid.v);
-  } else if (pts.length){
-    for (const p of pts){ lo = Math.min(lo, tr(p.v)); hi = Math.max(hi, tr(p.v)); }
-    if (hi === lo){ hi += 0.5; lo -= 0.5; }
-  }
-  const col = v => ramp((v - lo) / (hi - lo));
-
-  if (def.mode === 'density' && pts.length){
-    const off = document.createElement('canvas'); off.width = grid.w; off.height = grid.hgt;
-    const oc = off.getContext('2d'), im = oc.createImageData(grid.w, grid.hgt);
-    for (let i = 0; i < grid.v.length; i++){ const v = grid.v[i], u = v / hi; if (u < 0.02) continue; const c = col(v); im.data.set([c[0], c[1], c[2], Math.round(60 + 170 * Math.min(1, u * 1.4))], i * 4); }
+    if (dens){ lo = 0; hi = 0; for (const v of F) if (v > hi) hi = v; if (hi <= 0) hi = 1; }
+    const br = dens ? classBreaks(lo, hi, false) : quantBreaks(tv, def.log);
+    const nC = br.length - 1;
+    const cc = Array.from({ length: nC }, (_, c) => ramp(nC === 1 ? .6 : (c + .5) / nC));
+    const clsOf = v => { let c = 0; while (c < nC - 1 && v >= br[c + 1]) c++; return c; };
+    // fill: one texel per grid node, drawn without smoothing so class edges stay sharp
+    const off = document.createElement('canvas'); off.width = gw; off.height = gh;
+    const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
+    for (let q = 0; q < F.length; q++){ const v = F[q]; if (v !== v) continue; const c = cc[clsOf(v)]; im.data[q * 4] = c[0]; im.data[q * 4 + 1] = c[1]; im.data[q * 4 + 2] = c[2]; im.data[q * 4 + 3] = 255; }
     oc.putImageData(im, 0, 0);
-    ctx.save(); ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath(); ctx.clip();
-    ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, MW, LH); ctx.restore();
-  }
-
-  // --- field values interpolated over the whole study perimeter (IDW)
-  if (def.mode !== 'density'){
-    const peri = new Path2D(); P.forEach((p, i) => i ? peri.lineTo(X(p[0]), Y(p[1])) : peri.moveTo(X(p[0]), Y(p[1]))); peri.closePath();
-    if (!pts.length){
-      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(peri); ctx.fillStyle = hatch; ctx.fill(peri);
-    } else {
-      const step = 2, gw = Math.ceil(MW / step), gh = Math.ceil(LH / step);
-      const PR = P.map(p => [X(p[0]), Y(p[1])]);
-      const off = document.createElement('canvas'); off.width = gw; off.height = gh;
-      const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
-      const tv = pts.map(p => tr(p.v));
-      for (let j = 0; j < gh; j++){
-        const y = (j + .5) * step;
-        for (let i = 0; i < gw; i++){
-          const x = (i + .5) * step;
-          if (!pip(x, y, PR)){
-            // keep a 1-cell margin so smoothing reaches the clipped edge
-            if (!pip(x + step, y, PR) && !pip(x - step, y, PR) && !pip(x, y + step, PR) && !pip(x, y - step, PR)) continue;
-          }
-          let sw = 0, sv = 0, exact = null;
-          for (let q = 0; q < pts.length; q++){ const d = Math.hypot(x - pts[q].x, y - pts[q].y); if (d < step * .5){ exact = tv[q]; break; } const w = 1 / d ** S.pw; sw += w; sv += w * tv[q]; }
-          const c = col(exact ?? sv / sw);
-          im.data.set([c[0], c[1], c[2], 255], (j * gw + i) * 4);
+    ctx.save(); ctx.clip(peri);
+    ctx.globalAlpha = S.base === 'none' ? 1 : .85; ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, -step / 2, -step / 2, gw * step, gh * step);
+    ctx.globalAlpha = 1;
+    // isolines at every interior class break (marching squares)
+    ctx.beginPath();
+    for (let b = 1; b < nC; b++){
+      const t = br[b];
+      for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++){
+        const a = F[j * gw + i], bb = F[j * gw + i + 1], c = F[(j + 1) * gw + i + 1], d = F[(j + 1) * gw + i];
+        if (a !== a || bb !== bb || c !== c || d !== d) continue;
+        const idx = (a >= t ? 8 : 0) | (bb >= t ? 4 : 0) | (c >= t ? 2 : 0) | (d >= t ? 1 : 0);
+        if (idx === 0 || idx === 15) continue;
+        const x = i * step, y = j * step, f = (p, q) => (t - p) / (q - p || 1e-9);
+        const T = [x + step * f(a, bb), y], R = [x + step, y + step * f(bb, c)], B = [x + step * f(d, c), y + step], L = [x, y + step * f(a, d)];
+        const seg = (p, q) => { ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); };
+        switch (idx){
+          case 1: case 14: seg(L, B); break;
+          case 2: case 13: seg(B, R); break;
+          case 3: case 12: seg(L, R); break;
+          case 4: case 11: seg(T, R); break;
+          case 6: case 9: seg(T, B); break;
+          case 7: case 8: seg(L, T); break;
+          case 5: seg(L, T); seg(B, R); break;
+          case 10: seg(T, R); seg(L, B); break;
         }
       }
-      oc.putImageData(im, 0, 0);
-      ctx.save(); ctx.clip(peri); ctx.globalAlpha = S.base === 'none' ? 1 : .82; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(off, 0, 0, gw * step, gh * step); ctx.restore();
     }
+    ctx.strokeStyle = 'rgba(27,42,51,.75)'; ctx.lineWidth = .9; ctx.stroke();
+    ctx.restore();
+    classes = cc.map((c, i) => ({ c, a: dens ? br[i] : inv(br[i]), b: dens ? br[i + 1] : inv(br[i + 1]) }));
   }
   for (const f of S.hum.features){
     const path = pathOf(f);
@@ -458,28 +539,56 @@ async function render(canvas, def, k){
   }
 
   // points
-  for (const p of (def.mode === 'density' ? S.rows.map(r => ({ r, x: X(r.lon), y: Y(r.lat), v: r.conexiones })) : pts)){
+  for (const p of (def.mode === 'density' ? pts : pts)){
     const rad = def.mode === 'density' ? 3 + 2.2 * Math.sqrt(isNum(p.v) ? p.v : 0) : 5;
     ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-    ctx.fillStyle = def.mode === 'density' ? (isNum(p.v) && p.v > 0 ? '#1c1917' : '#ffffff') : rgb(col(tr(p.v)));
+    ctx.fillStyle = def.mode === 'density' ? (isNum(p.v) && p.v > 0 ? '#1c1917' : '#ffffff') : rgb(classes ? classes[classOfValue(classes, p.v)].c : ramp(.5));
     ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffffff'; ctx.stroke(); ctx.lineWidth = .8; ctx.strokeStyle = '#1b2a33'; ctx.stroke();
-    if (S.labels && isNum(p.v)){
+    p.rad = rad;
+  }
+  // labels: greedy placement that avoids overlaps, with a leader line when moved away
+  if (S.labels){
+    const font = '500 12.5px "IBM Plex Mono", monospace', LHh = 14, boxes = pts.map(p => [p.x - p.rad, p.y - p.rad, p.x + p.rad, p.y + p.rad]);
+    ctx.font = font;
+    const hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+    const colName = def.alt ? S.alt[def.n] : def.col;
+    for (const p of [...pts].sort((a, b) => a.y - b.y)){
+      if (!isNum(p.v)) continue;
+      const txt = (p.n === 1 && colName && p.r[colName + '_txt']) ? p.r[colName + '_txt'] : fmt(p.v, def.mode === 'density' ? 0 : def.dec);
+      const w = ctx.measureText(txt).width + 4;
+      let best = null;
+      for (const dist of [p.rad + 4, 22, 38, 56, 76]){
+        for (const a of [0, Math.PI, -Math.PI / 2, Math.PI / 2, -Math.PI / 4, Math.PI / 4, -3 * Math.PI / 4, 3 * Math.PI / 4]){
+          const ax = p.x + Math.cos(a) * dist, ay = p.y + Math.sin(a) * dist;
+          const x0 = Math.cos(a) < -0.1 ? ax - w : Math.abs(Math.cos(a)) <= 0.1 ? ax - w / 2 : ax;
+          const b = [x0, ay - LHh / 2, x0 + w, ay + LHh / 2];
+          if (b[0] < 4 || b[2] > MW - 4 || b[1] < 4 || b[3] > LH - 4 || hit(b)) continue;
+          best = { b, dist }; break;
+        }
+        if (best) break;
+      }
+      if (!best){ const x0 = p.x + p.rad + 4; best = { b: [x0, p.y - LHh / 2, x0 + w, p.y + LHh / 2], dist: 0 }; }
+      boxes.push(best.b);
+      if (best.dist > p.rad + 4){
+        const cx = Math.max(best.b[0], Math.min(p.x, best.b[2])), cy = Math.max(best.b[1], Math.min(p.y, best.b[3]));
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(cx, cy); ctx.strokeStyle = 'rgba(27,42,51,.7)'; ctx.lineWidth = .8; ctx.stroke();
+      }
       ctx.textAlign = 'left';
-      haloText(ctx, fmt(p.v, def.mode === 'density' ? 0 : def.dec), p.x + rad + 4, p.y + 4, '500 12.5px "IBM Plex Mono", monospace', '#111');
+      haloText(ctx, txt, best.b[0] + 2, best.b[1] + LHh / 2 + 4.5, font, '#111');
     }
   }
   ctx.restore();
   finish();
 
   // --- sheet panel
-  const srcIds = [...new Set(pts.map(p => p.r.fuente).filter(Boolean))];
+  const srcIds = [...new Set(pts.flatMap(p => [...p.src]))];
   sheet(ctx, def, {
-    lo, hi, inv, ramp, has: pts.length > 0,
+    lo, hi, inv, ramp, has: pts.length > 0, classes,
     sub: subOf(def), unit: unitOf(def), log: def.log, dec: def.mode === 'density' ? 1 : def.dec,
     symbol: def.mode === 'density' ? 'Punto de conexión errada (tamaño = número)' : 'Punto de muestreo',
     stats: ['La Vaca', 'El Burro', 'Techo'].map(g => { const vs = pts.filter(p => GROUPS[p.f] === g).map(p => p.v); return [g, vs.length ? `n=${vs.length}  ${fmt(Math.min(...vs), def.dec)} – ${fmt(Math.max(...vs), def.dec)}` : 'sin dato']; }),
     srcTxt: srcIds.length ? srcIds.map(id => (S.fuentes.find(f => f.id === id) || {}).corto || id).join('; ') : 'Sin datos para esta variable en las fuentes revisadas',
-    method: def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : 'IDW potencia ' + S.pw + ' sobre el perímetro'
+    method: (def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : S.method === 'thiessen' ? 'Polígonos de Thiessen' : 'IDW potencia ' + S.pw) + ', clases e isolíneas' + ' · ' + periodText() + (pts.some(p => p.n > 1) ? ' (promedio por punto)' : '')
   });
 }
 
@@ -517,7 +626,7 @@ async function runSentinel(){
     if (!items.length) throw new Error('No hay escenas con menos de 60 % de nubes en ese periodo.');
     const epsg = itemEpsg(items[0]), def = utmDef(epsg);
     const corners = []; for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) corners.push(proj4('EPSG:4326', def, [bbox[0] + (bbox[2] - bbox[0]) * i / 4, bbox[1] + (bbox[3] - bbox[1]) * j / 4]));
-    const res = 20;
+    const res = +$('sres').value;
     const ub = [Math.floor(Math.min(...corners.map(c => c[0])) / res) * res, Math.floor(Math.min(...corners.map(c => c[1])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[0])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[1])) / res) * res];
     const W = (ub[2] - ub[0]) / res, H = (ub[3] - ub[1]) / res, N = W * H;
     const stacks = { mndwi: [], ndti: [], ndci: [] };
@@ -560,7 +669,7 @@ async function runSentinel(){
     }
     for (let f = 0; f < feats2.length; f++){ let n = 0; for (let p = 0; p < N; p++) if (SAT.cellFeat[p] === f && SAT.mndwi[p] > 0) n++; SAT.area[feats2[f].properties.humedal] = n * res * res / 1e4; }
     SAT.ready = true;
-    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana a 20 m · EPSG:${epsg}`;
+    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana a ${res} m · EPSG:${epsg}`;
     for (const n of Object.keys(SATDEF)) await draw(V[n - 1]);
   } catch (e){ st.textContent = e.message; console.error(e); }
   btn.disabled = false;
@@ -568,7 +677,7 @@ async function runSentinel(){
 function drawSat(ctx, def, g){
   const sd = SATDEF[def.n], A = SAT[sd.idx], { W, H, res, ub } = SAT;
   const ramp = rampFn(def.ramp);
-  const step = 2, ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
+  const step = 1, ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
   const Z = TILE * 2 ** g.zf;
   const vals = new Float32Array(ow * oh).fill(NaN);
   const conv = proj4('EPSG:4326', SAT.def);
@@ -624,14 +733,54 @@ function drawSat(ctx, def, g){
   }
   return {
     lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
-    symbol: 'Píxel Sentinel-2 de 20 m',
-    stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]}, máscara de nubes SCL`,
-    method: `Índice ${sd.idx.toUpperCase()} · 20 m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · superficie mixta agua-vegetación')
+    symbol: `Píxel Sentinel-2 de ${res} m`,
+    stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]} a ${res} m, máscara de nubes SCL`,
+    method: `Índice ${sd.idx.toUpperCase()} · ${res} m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · superficie mixta agua-vegetación')
   };
 }
 
 function haloText(ctx, t, x, y, font, color){
   ctx.font = font; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+const FR = 52; // width of the coordinate margin around the map
+function dms(v, pos, neg){
+  const h = v < 0 ? neg : pos; v = Math.abs(v);
+  let d = Math.floor(v), m = Math.floor((v - d) * 60), sec = Math.round(((v - d) * 60 - m) * 60);
+  if (sec === 60){ sec = 0; m++; } if (m === 60){ m = 0; d++; }
+  return `${d}°${m}'${sec}"${h}`;
+}
+function frame(ctx, g){
+  const Z = TILE * 2 ** g.zf;
+  const lonAt = x => (x + g.cx - MW / 2) / Z * 360 - 180;
+  const latAt = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + g.cy - LH / 2) / Z))) * 180 / Math.PI;
+  const xAt = lon => (lon + 180) / 360 * Z - g.cx + MW / 2;
+  const yAt = lat => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * Z - g.cy + LH / 2; };
+  const x0 = FR, x1 = MW - FR, y0 = FR, y1 = LH - FR;
+  // white margin
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.rect(x0, y0, x1 - x0, y1 - y0);
+  ctx.fillStyle = '#FFFFFF'; ctx.fill('evenodd');
+  ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.4; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  const steps = [15, 30, 60, 120, 300, 600].map(v => v / 3600);
+  const pick = span => steps.find(st => span / st <= 6) || steps[steps.length - 1];
+  const l0 = lonAt(x0), l1 = lonAt(x1), a0 = latAt(y1), a1 = latAt(y0);
+  const sl = pick(l1 - l0), sa = pick(a1 - a0);
+  ctx.fillStyle = '#1b2a33'; ctx.font = '12px "IBM Plex Sans", sans-serif';
+  ctx.beginPath();
+  for (let v = Math.ceil(l0 / sl) * sl; v <= l1; v += sl){
+    const x = xAt(v); if (x < x0 + 30 || x > x1 - 30) continue;
+    ctx.moveTo(x, y0); ctx.lineTo(x, y0 - 6); ctx.moveTo(x, y1); ctx.lineTo(x, y1 + 6);
+    ctx.textAlign = 'center';
+    ctx.fillText(dms(v, 'E', 'W'), x, y0 - 12); ctx.fillText(dms(v, 'E', 'W'), x, y1 + 22);
+  }
+  for (let v = Math.ceil(a0 / sa) * sa; v <= a1; v += sa){
+    const y = yAt(v); if (y < y0 + 30 || y > y1 - 30) continue;
+    ctx.moveTo(x0, y); ctx.lineTo(x0 - 6, y); ctx.moveTo(x1, y); ctx.lineTo(x1 + 6, y);
+    ctx.save(); ctx.translate(x0 - 12, y); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(dms(v, 'N', 'S'), 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(x1 + 20, y); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(dms(v, 'N', 'S'), 0, 0); ctx.restore();
+  }
+  ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
 }
 function northArrow(ctx, x, y){
   ctx.save(); ctx.translate(x, y);
@@ -678,9 +827,20 @@ function sheet(ctx, def, D){
   ctx.fillStyle = '#6b7670'; ctx.font = '500 11.5px "IBM Plex Sans", sans-serif';
   ctx.fillText(('LEYENDA · ' + D.unit + (D.log ? ' (escala log)' : '')).toUpperCase(), px, y); y += 12;
   const rw = iw, rh = 16;
+  const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
+  if (D.classes){
+    y += 6;
+    const cols = D.classes.length > 5 ? 2 : 1, cw = iw / cols;
+    D.classes.forEach((c, i) => {
+      const cx = px + (i % cols) * cw, cy = y + Math.floor(i / cols) * 24;
+      ctx.fillStyle = rgb(c.c); ctx.fillRect(cx, cy, 26, 16); ctx.strokeStyle = '#6b7670'; ctx.lineWidth = .8; ctx.strokeRect(cx, cy, 26, 16);
+      ctx.fillStyle = '#17201B'; ctx.font = '12.5px "IBM Plex Mono", monospace'; ctx.textAlign = 'left';
+      ctx.fillText(`${fmt(c.a, D.dec)} – ${fmt(c.b, D.dec)}`, cx + 34, cy + 12.5);
+    });
+    y += Math.ceil(D.classes.length / cols) * 24 + 16;
+  } else {
   for (let i = 0; i < rw; i++){ ctx.fillStyle = rgb(D.ramp(i / (rw - 1))); ctx.fillRect(px + i, y, 1.5, rh); }
   ctx.strokeStyle = '#9aa39d'; ctx.lineWidth = 1; ctx.strokeRect(px, y, rw, rh);
-  const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
   ctx.fillStyle = '#17201B'; ctx.font = '12px "IBM Plex Mono", monospace';
   for (let i = 0; i <= 4; i++){
     const u = i / 4, tx = px + u * rw;
@@ -688,12 +848,15 @@ function sheet(ctx, def, D){
     ctx.fillStyle = '#17201B'; ctx.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center';
     ctx.fillText(has ? fmt(D.inv(D.lo + (D.hi - D.lo) * u), D.dec) : '–', tx, y + rh + 18);
   }
-  y += rh + 44; ctx.textAlign = 'left';
+  y += rh + 44;
+  }
+  ctx.textAlign = 'left';
 
   // symbols
   const sym = (draw, label) => { draw(px + 12, y - 5); ctx.fillStyle = '#17201B'; ctx.font = '13px "IBM Plex Sans", sans-serif'; ctx.fillText(label, px + 34, y); y += 24; };
   sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
   sym((x, yy) => { ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.6; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Límite de humedal (OSM)');
+  if (D.classes) sym((x, yy) => { ctx.strokeStyle = 'rgba(27,42,51,.75)'; ctx.lineWidth = .9; ctx.beginPath(); ctx.moveTo(x - 11, yy + 3); ctx.bezierCurveTo(x - 4, yy - 6, x + 4, yy + 6, x + 11, yy - 3); ctx.stroke(); }, 'Isolínea en cada límite de clase');
   sym((x, yy) => { ctx.setLineDash([6, 3]); ctx.strokeStyle = '#c0262d'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - 11, yy); ctx.lineTo(x + 11, yy); ctx.stroke(); ctx.setLineDash([]); }, 'Perímetro de estudio');
   sym((x, yy) => { ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, yy - 6, 20, 12); const c = document.createElement('canvas'); c.width = c.height = 6; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.6)'; g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.stroke(); ctx.fillStyle = ctx.createPattern(c, 'repeat'); ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sin dato en las fuentes');
   y += 8;
@@ -749,15 +912,15 @@ function build(){
 }
 async function draw(def){
   await render(canvases[def.n], def, 0.8);
-  const n = S.rows.filter(r => isNum(valueOf(def, r))).length;
+  const n = activeRows().filter(r => isNum(valueOf(def, r))).length;
   const sat = useSat(def);
-  $('cnt-' + def.n).textContent = sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} puntos con dato` : 'sin datos de campo en las fuentes');
+  $('cnt-' + def.n).textContent = sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} mediciones en el periodo` : 'sin datos de campo en el periodo');
   $('cv-' + def.n).classList.toggle('empty', !n && !sat);
 }
 async function drawAll(){
   $('status').textContent = 'Dibujando planos…';
   for (const def of V) await draw(def);
-  $('status').textContent = `${S.rows.length} puntos · ${new Set(S.rows.map(r => r.fuente).filter(Boolean)).size} fuentes · mapa base ${$('base').selectedOptions[0].text}`;
+  $('status').textContent = `${activeRows().length} de ${S.rows.length} mediciones en el periodo · ${new Set(S.rows.map(r => r.fuente).filter(Boolean)).size} fuentes · mapa base ${$('base').selectedOptions[0].text}`;
   $('zipall').disabled = false;
 }
 const fileName = def => `plano_${String(def.n).padStart(2, '0')}_${def.t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_$/, '')}.png`;
@@ -789,13 +952,14 @@ $('zipall').addEventListener('click', async () => {
 
 $('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
 $('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });
+$('meth').addEventListener('change', e => { S.method = e.target.value; $('pw').disabled = S.method === 'thiessen'; drawAll(); });
 $('labels').addEventListener('change', e => { S.labels = e.target.checked; drawAll(); });
 $('csvfile').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const rows = parseCSV(await f.text());
     if (!rows.length) throw new Error('El CSV no tiene filas con columnas lat y lon.');
-    S.rows = rows; S.dataName = f.name; setPill(false); drawAll();
+    S.rows = rows; S.dataName = f.name; setPill(false); { const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; } drawAll();
   } catch (err){ $('status').textContent = err.message; }
 });
 $('kmlfile').addEventListener('change', async e => {
@@ -814,6 +978,10 @@ build();
 S.rows = parseCSV(window.MUESTREO || 'punto,lat,lon\n');
 setPill(true); renderSources();
 $('satrun').addEventListener('click', runSentinel);
+const onPeriod = () => { drawAll(); };
+$('p0').addEventListener('change', onPeriod); $('p1').addEventListener('change', onPeriod);
+$('pall').addEventListener('click', () => { const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; drawAll(); });
+{ const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; }
 document.fonts.ready.then(async () => { await drawAll(); runSentinel(); });
 })();
 </script>
