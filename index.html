@@ -117,7 +117,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
     <div class="ctl" style="justify-content:space-between">
       <div style="display:flex;flex-direction:column;gap:4px;min-width:0;max-width:70ch">
         <h2>Copernicus Sentinel-2</h2>
-        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Calcula el MNDWI (humedad superficial y agua abierta, MNDWI &gt; 0), el NDCI (clorofila, proxy de eutrofización) y el NDTI (turbiedad y sedimentos relativos) dentro de cada humedal. En estos humedales la lámina de agua está casi toda cubierta de vegetación, así que los índices describen una superficie mixta de agua y vegetación. Se usa en los planos 2, 9, 10 y 16 con el selector «Fuente».</p>
+        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Mediana por banda (B2, B3, B4, B5, B8, B11, B12) y un índice espectral por plano: MNDWI (agua), NDCI (clorofila), NDTI y B4 (turbiedad y sólidos), Stumpf (profundidad), SI (salinidad), NDBI (superficie construida), AWEI, BSI, NDVI, SAVI, NDMI, MSI, GNDVI y relaciones de bandas. Salvo el MNDWI del plano 16, son indicadores relativos sin calibrar: muestran la variación espectral asociada a la variable, no su valor medido. Cada plano elige su fuente con el selector «Fuente».</p>
         <span class="status" id="satstatus">Esperando…</span>
       </div>
       <div class="ctl">
@@ -126,6 +126,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
         <div class="field"><label for="sres">Píxel</label><select id="sres"><option value="10" selected>10 m</option><option value="20">20 m</option></select></div>
         <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
         <button type="button" id="satrun">Recalcular</button>
+        <div class="field"><span class="lbl">Fuente en los 20 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
       </div>
     </div>
   </section>
@@ -222,7 +223,7 @@ const $ = id => document.getElementById(id);
 const S = {
   rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
   perim: window.PERIMETRO, hum: window.HUMEDALES,
-  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: {2:'campo', 9:'campo', 10:'campo', 16:'sat'}
+  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20) ? 'sat' : 'campo']))
 };
 
 // ---------------- CSV ----------------
@@ -605,16 +606,47 @@ async function render(canvas, def, k){
 }
 
 // ---------------- Sentinel-2 ----------------
+// One spectral indicator per plano. Only 16 (MNDWI) is a direct measurement of the mapped quantity;
+// the others are relative, uncalibrated proxies used in the remote-sensing literature for that variable.
+const nd = (a, b) => (a - b) / (a + b);
 const SATDEF = {
-  2:  { idx: 'ndci',  sub: 'NDCI · índice de clorofila (proxy de eutrofización)', unit: 'índice NDCI' },
-  9:  { idx: 'ndti',  sub: 'NDTI · índice de turbiedad (proxy)', unit: 'índice NDTI' },
-  10: { idx: 'ndti',  sub: 'NDTI · sedimentos en suspensión (proxy)', unit: 'índice NDTI' },
-  16: { idx: 'mndwi', sub: 'MNDWI · humedad superficial; agua abierta si MNDWI > 0', unit: 'índice MNDWI', area: true }
+  1:  { idx: 'gb',    f: b => b.G / b.B,               sub: 'Relación verde/azul B3/B2 (proxy empírico de pH)' },
+  2:  { idx: 'ndci',  f: b => nd(b.E, b.R),            sub: 'NDCI · índice de clorofila (proxy de eutrofización)' },
+  3:  { idx: 'ndwi',  f: b => nd(b.G, b.N),            sub: 'NDWI (McFeeters) · agua superficial (contexto para OD)' },
+  4:  { idx: 'rg',    f: b => b.R / b.G,               sub: 'Relación rojo/verde B4/B3 (proxy empírico de fósforo)' },
+  5:  { idx: 'br',    f: b => b.B / b.R,               sub: 'Relación azul/rojo B2/B4 (proxy empírico de nitrógeno)' },
+  6:  { idx: 'ndmi',  f: b => nd(b.N, b.S1),           sub: 'NDMI · humedad de la superficie (contexto para DQO)' },
+  7:  { idx: 'rb',    f: b => b.R / b.B,               sub: 'Relación rojo/azul B4/B2 (proxy empírico de DBO5)' },
+  8:  { idx: 'gndvi', f: b => nd(b.N, b.G),            sub: 'GNDVI · actividad vegetal (contexto para biodegradabilidad)' },
+  9:  { idx: 'ndti',  f: b => nd(b.R, b.G),            sub: 'NDTI · índice de turbiedad (proxy)' },
+  10: { idx: 'red',   f: b => b.R,                     sub: 'Reflectancia roja B4 (proxy de sólidos en suspensión)' },
+  11: { idx: 'si',    f: b => Math.sqrt(Math.max(0, b.B * b.R)), sub: 'Índice de salinidad SI = √(B2·B4) (proxy de conductividad)' },
+  12: { idx: 'swr',   f: b => nd(b.S1, b.S2),          sub: 'Índice SWIR (B11−B12)/(B11+B12) (sensible a hidrocarburos)' },
+  13: { idx: 'ndvi',  f: b => nd(b.N, b.R),            sub: 'NDVI · cobertura vegetal (contexto sanitario)' },
+  14: { idx: 'savi',  f: b => 1.5 * (b.N - b.R) / (b.N + b.R + 0.5), sub: 'SAVI · vegetación ajustada al suelo (contexto sanitario)' },
+  15: { idx: 'stumpf', f: b => Math.log(1000 * b.B) / Math.log(1000 * b.G), sub: 'Relación logarítmica de Stumpf ln(B2)/ln(B3) (proxy de profundidad)' },
+  16: { idx: 'mndwi', f: b => nd(b.G, b.S1),           sub: 'MNDWI · humedad superficial; agua abierta si MNDWI > 0', area: true },
+  17: { idx: 'msi',   f: b => b.S1 / b.N,              sub: 'MSI · estrés hídrico B11/B8 (contexto para nivel freático)' },
+  18: { idx: 'ndbi',  f: b => nd(b.S1, b.N),           sub: 'NDBI · superficie construida (presión urbana, fuentes de vertimiento)' },
+  19: { idx: 'awei',  f: b => 4 * (b.G - b.S1) - (0.25 * b.N + 2.75 * b.S2), sub: 'AWEI · extracción de agua superficial (contexto para caudal)' },
+  20: { idx: 'bsi',   f: b => ((b.S1 + b.R) - (b.N + b.B)) / ((b.S1 + b.R) + (b.N + b.B)), sub: 'BSI · suelo desnudo (fuente de carga por escorrentía)' }
 };
-const SAT = { ready: false };
+Object.values(SATDEF).forEach(d => { d.unit = d.area ? 'índice MNDWI' : 'índice ' + d.idx.toUpperCase(); });
+const SAT = { ready: false, cache: {} };
 function useSat(def){ return SATDEF[def.n] && S.src[def.n] === 'sat' && SAT.ready; }
+function satIdx(key){
+  if (SAT.cache[key]) return SAT.cache[key];
+  const d = Object.values(SATDEF).find(x => x.idx === key), N = SAT.W * SAT.H, out = new Float32Array(N), Bd = SAT.band, b = {};
+  for (let p = 0; p < N; p++){
+    b.B = Bd.B[p]; b.G = Bd.G[p]; b.R = Bd.R[p]; b.E = Bd.E[p]; b.N = Bd.N[p]; b.S1 = Bd.S1[p]; b.S2 = Bd.S2[p];
+    if (b.G !== b.G){ out[p] = NaN; continue; }
+    const v = d.f(b); out[p] = isFinite(v) ? v : NaN;
+  }
+  return (SAT.cache[key] = out);
+}
 function utmDef(epsg){ const s = epsg > 32700; return `+proj=utm +zone=${s ? epsg - 32700 : epsg - 32600}${s ? ' +south' : ''} +datum=WGS84 +units=m +no_defs`; }
 const itemEpsg = it => +(it.properties['proj:epsg'] || String(it.properties['proj:code'] || '').split(':')[1]);
+const BANDS = [['B', 'blue'], ['G', 'green'], ['R', 'red'], ['E', 'rededge1'], ['N', 'nir'], ['S1', 'swir16'], ['S2', 'swir22']];
 async function runSentinel(){
   const st = $('satstatus'), btn = $('satrun');
   btn.disabled = true; SAT.ready = false;
@@ -641,49 +673,44 @@ async function runSentinel(){
     const res = +$('sres').value;
     const ub = [Math.floor(Math.min(...corners.map(c => c[0])) / res) * res, Math.floor(Math.min(...corners.map(c => c[1])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[0])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[1])) / res) * res];
     const W = (ub[2] - ub[0]) / res, H = (ub[3] - ub[1]) / res, N = W * H;
-    const stacks = { mndwi: [], ndti: [], ndci: [], gray: [] };
+    // raw uint16 stacks per band; cloud/shadow pixels stored as 0 (nodata)
+    const stacks = Object.fromEntries(BANDS.map(([k]) => [k, []])), scales = {};
     let done = 0;
     const read = async (a, box) => (await (await GeoTIFF.fromUrl(a.href)).readRasters({ bbox: box, width: W, height: H, fillValue: 0, interleave: true }));
-    const sc = a => { const b = (a['raster:bands'] || [{}])[0]; return [b.scale ?? 1, b.offset ?? 0]; };
     const queue = items.slice();
     await Promise.all(Array.from({ length: 4 }, async () => {
       while (queue.length){
         const it = queue.shift();
         const e = itemEpsg(it), box = e === epsg ? ub : (() => { const d2 = utmDef(e); const cs = corners.map(c => proj4(def, d2, c)); return [Math.min(...cs.map(c => c[0])), Math.min(...cs.map(c => c[1])), Math.max(...cs.map(c => c[0])), Math.max(...cs.map(c => c[1]))]; })();
         try {
-          const [g, r, re, sw, scl] = await Promise.all(['green', 'red', 'rededge1', 'swir16', 'scl'].map(k => read(it.assets[k], box)));
-          const [gs, go] = sc(it.assets.green), [rs, ro] = sc(it.assets.red), [es, eo] = sc(it.assets.rededge1), [ss, so] = sc(it.assets.swir16);
-          const m = new Float32Array(N), t = new Float32Array(N), c = new Float32Array(N), gy = new Float32Array(N);
-          for (let p = 0; p < N; p++){
-            const q = scl[p];
-            if (!g[p] || !r[p] || !sw[p] || q === 0 || q === 1 || q === 3 || q === 8 || q === 9 || q === 10){ m[p] = t[p] = c[p] = gy[p] = NaN; continue; }
-            const G = g[p] * gs + go, R = r[p] * rs + ro, E = re[p] * es + eo, SW = sw[p] * ss + so;
-            m[p] = (G - SW) / (G + SW); t[p] = (R - G) / (R + G); c[p] = (E - R) / (E + R); gy[p] = (G + R + SW) / 3;
-          }
-          stacks.mndwi.push(m); stacks.ndti.push(t); stacks.ndci.push(c); stacks.gray.push(gy);
+          const arrs = await Promise.all([...BANDS.map(([, a]) => read(it.assets[a], box)), read(it.assets.scl, box)]);
+          const scl = arrs[BANDS.length];
+          for (let p = 0; p < N; p++){ const q = scl[p]; if (q === 0 || q === 1 || q === 3 || q === 8 || q === 9 || q === 10) for (let k = 0; k < BANDS.length; k++) arrs[k][p] = 0; }
+          BANDS.forEach(([k, a], i) => { stacks[k].push(arrs[i]); if (!scales[k]){ const b = (it.assets[a]['raster:bands'] || [{}])[0]; scales[k] = [b.scale ?? 1, b.offset ?? 0]; } });
         } catch (err){ console.warn(it.id, err); }
-        done++; st.textContent = `Leyendo Sentinel-2… ${done}/${items.length}`;
+        done++; st.textContent = `Leyendo Sentinel-2 (7 bandas + SCL)… ${done}/${items.length}`;
       }
     }));
-    if (!stacks.mndwi.length) throw new Error('No se pudo leer ninguna escena Sentinel-2.');
-    st.textContent = 'Calculando mediana…'; await new Promise(r => setTimeout(r, 0));
-    const med = arrs => { const out = new Float32Array(N), buf = new Float32Array(arrs.length); for (let p = 0; p < N; p++){ let k = 0; for (const a of arrs){ const v = a[p]; if (v === v) buf[k++] = v; } if (!k){ out[p] = NaN; continue; } const s = buf.subarray(0, k).sort(); out[p] = k % 2 ? s[k >> 1] : (s[k / 2 - 1] + s[k / 2]) / 2; } return out; };
-    SAT.mndwi = med(stacks.mndwi); SAT.ndti = med(stacks.ndti); SAT.ndci = med(stacks.ndci); SAT.gray = med(stacks.gray);
+    if (!stacks.G.length) throw new Error('No se pudo leer ninguna escena Sentinel-2.');
+    st.textContent = 'Calculando mediana por banda…'; await new Promise(r => setTimeout(r, 0));
+    const med = (arrs, [s, o]) => { const out = new Float32Array(N), buf = new Uint16Array(arrs.length); for (let p = 0; p < N; p++){ let k = 0; for (const a of arrs){ const v = a[p]; if (v) buf[k++] = v; } if (!k){ out[p] = NaN; continue; } const sb = buf.subarray(0, k).sort(); const m = k % 2 ? sb[k >> 1] : (sb[k / 2 - 1] + sb[k / 2]) / 2; out[p] = m * s + o; } return out; };
+    SAT.band = {}; for (const [k] of BANDS) SAT.band[k] = med(stacks[k], scales[k]);
+    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.G.length, cache: {} });
+    SAT.mndwi = satIdx('mndwi');
+    SAT.gray = new Float32Array(N); for (let p = 0; p < N; p++) SAT.gray[p] = (SAT.band.G[p] + SAT.band.R[p] + SAT.band.S1[p]) / 3;
     { const v = Array.from(SAT.gray).filter(x => x === x).sort((a, b) => a - b); SAT.gLo = v[Math.floor(v.length * .02)]; SAT.gHi = v[Math.floor(v.length * .98)]; }
     SAT.version = (SAT.version || 0) + 1; shadeCache.clear();
-    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.mndwi.length });
     const dates = items.map(i => i.properties.datetime.slice(0, 10)).sort();
     SAT.dates = [dates[0], dates[dates.length - 1]];
-    // water area per wetland feature
-    SAT.area = {}; SAT.cellFeat = new Int8Array(N).fill(-1);
+    // wetland membership of every cell
+    SAT.cellFeat = new Int8Array(N).fill(-1);
     const feats2 = S.hum.features, inv = proj4(def, 'EPSG:4326');
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++){
       const ll = inv.forward([ub[0] + (i + .5) * res, ub[3] - (j + .5) * res]);
       for (let f = 0; f < feats2.length; f++) if (rings(feats2[f].geometry).some(r => pip(ll[0], ll[1], r))){ SAT.cellFeat[j * W + i] = f; break; }
     }
-    for (let f = 0; f < feats2.length; f++){ let n = 0; for (let p = 0; p < N; p++) if (SAT.cellFeat[p] === f && SAT.mndwi[p] > 0) n++; SAT.area[feats2[f].properties.humedal] = n * res * res / 1e4; }
     SAT.ready = true;
-    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana a ${res} m · EPSG:${epsg}`;
+    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana por banda a ${res} m · EPSG:${epsg}`;
     await drawAll();
   } catch (e){ st.textContent = e.message; console.error(e); }
   btn.disabled = false;
@@ -711,7 +738,7 @@ function shadeGrid(g, step, gw, gh){
   return out;
 }
 function drawSat(ctx, def, g){
-  const sd = SATDEF[def.n], A = SAT[sd.idx], { W, H, res, ub } = SAT;
+  const sd = SATDEF[def.n], A = satIdx(sd.idx), { W, H, res, ub } = SAT;
   const ramp = rampFn(def.ramp);
   const step = 1, ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
   const Z = TILE * 2 ** g.zf;
@@ -758,9 +785,9 @@ function drawSat(ctx, def, g){
     ctx.textAlign = 'center'; if (S.conv.names) haloText(ctx, 'Humedal ' + grp, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
     const ids = new Set(fs.map(([, k]) => k));
     let n = 0, s = 0, w = 0;
-    for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p])){ n++; if (SAT.mndwi[p] > 0){ w++; s += SAT[sd.idx][p]; } }
+    for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p])){ n++; if (SAT.mndwi[p] > 0){ w++; s += A[p]; } }
     const ha = w * res * res / 1e4, tot = n * res * res / 1e4;
-    let s2 = 0, n2 = 0; for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p]) && SAT[sd.idx][p] === SAT[sd.idx][p]){ s2 += SAT[sd.idx][p]; n2++; }
+    let s2 = 0, n2 = 0; for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p]) && A[p] === A[p]){ s2 += A[p]; n2++; }
     const mean = n2 ? s2 / n2 : NaN;
     let txt = sd.area ? `agua abierta ${fmt(ha, 2)} de ${fmt(tot, 1)} ha` : `media ${fmt(mean, 3)} · ${n2} píx.`;
     stats.push([grp, txt]);
@@ -768,9 +795,9 @@ function drawSat(ctx, def, g){
   }
   return {
     lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
-    symbol: `Píxel Sentinel-2 de ${res} m`,
+    symbol: `Píxel Sentinel-2 de ${res} m`, satNote: !sd.area,
     stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]} a ${res} m, máscara de nubes SCL`,
-    method: `Índice ${sd.idx.toUpperCase()} · ${res} m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · superficie mixta agua-vegetación')
+    method: `Índice ${sd.idx.toUpperCase()} · ${res} m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · indicador satelital relativo sin calibrar; no es una medición de la variable')
   };
 }
 
@@ -910,6 +937,7 @@ function sheet(ctx, def, D){
   // description
   ctx.fillStyle = '#33403A'; ctx.font = '14px "IBM Plex Sans", sans-serif';
   y = wrap(ctx, def.d, px, y, iw, 20);
+  if (D.satNote){ ctx.fillStyle = '#8a5a00'; ctx.font = '500 13px "IBM Plex Sans", sans-serif'; y = wrap(ctx, 'Indicador satelital relativo, sin calibrar: muestra la variación espectral asociada, no el valor de «' + def.t + '» en ' + def.u + '. Los valores medidos están en la fuente «Muestreo en campo».', px, y + 8, iw, 18); }
 
   // cartouche
   const srcTxt = D.srcTxt;
@@ -1016,6 +1044,9 @@ build();
 S.rows = parseCSV(window.MUESTREO || 'punto,lat,lon\n');
 setPill(true); renderSources();
 $('satrun').addEventListener('click', runSentinel);
+const setAll = v => { for (const d of V){ S.src[d.n] = v; const el = $('src-' + d.n); if (el) el.value = v; } drawAll(); };
+$('allcampo').addEventListener('click', () => setAll('campo'));
+$('allsat').addEventListener('click', () => setAll('sat'));
 const onPeriod = () => { drawAll(); };
 $('p0').addEventListener('change', onPeriod); $('p1').addEventListener('change', onPeriod);
 $('pall').addEventListener('click', () => { const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; drawAll(); });

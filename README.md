@@ -13,7 +13,7 @@ Abre `index.html` en el navegador (o publícalo con GitHub Pages: *Settings → 
 | `data/perimetro_kennedy_polygon2.kml` | Perímetro de estudio. |
 | `data.js` | Los tres anteriores empaquetados para que la página funcione sin servidor. |
 
-**Copernicus Sentinel-2:** la página calcula en vivo una mediana de escenas Sentinel-2 L2A (Earth Search / AWS, máscara de nubes SCL, 10 m) y obtiene MNDWI (humedad y agua abierta), NDCI (clorofila, proxy de eutrofización) y NDTI (turbiedad/sedimentos, proxy). Se usan en los planos 2, 9, 10 y 16 con el selector «Fuente». Contiene datos Copernicus Sentinel modificados.
+**Copernicus Sentinel-2:** la página calcula en vivo la mediana por banda (B2, B3, B4, B5, B8, B11, B12) de escenas Sentinel-2 L2A (Earth Search / AWS, máscara de nubes SCL, 10 m) y los 20 planos pueden mostrar un índice espectral propio (selector «Fuente», o «Fuente en los 20 planos»). El MNDWI del plano 16 mide agua; los demás (NDCI, NDTI, Stumpf, SI, NDBI, AWEI, BSI, NDVI, SAVI, NDMI, MSI, GNDVI y relaciones de bandas) son indicadores relativos sin calibrar, no mediciones de la variable. Contiene datos Copernicus Sentinel modificados.
 
 El periodo de muestreo (desde/hasta) filtra los datos de campo por fecha, como el parámetro datetime del notebook; el periodo de Sentinel-2 se elige aparte. No se necesita backend ni claves de API: todo usa servicios públicos (Earth Search, AWS S3, Esri/OSM).
 
