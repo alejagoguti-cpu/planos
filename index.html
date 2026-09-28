@@ -87,6 +87,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
       </div>
       <div class="ctl">
         <button type="button" id="zipall" disabled>Descargar los 20 (ZIP)</button>
+        <button type="button" class="ghost" id="zipbare" disabled>20 planos solos (ZIP)</button>
         <label class="btn ghost" for="csvfile">Cargar CSV propio</label>
         <input type="file" id="csvfile" accept=".csv,text/csv" hidden>
         <label class="btn ghost" for="kmlfile">Cambiar perímetro (KML)</label>
@@ -387,11 +388,13 @@ function tile(url){
 // ---------------- render ----------------
 // logical layout 1500 x 1000: map 1000x1000 on the left, sheet panel 500 wide on the right
 const LW = 1500, LH = 1000, MW = 1000;
-async function render(canvas, def, k){
-  canvas.width = Math.round(LW * k); canvas.height = Math.round(LH * k);
+async function render(canvas, def, k, opts = {}){
+  const bare = !!opts.bare;                       // map only: no sheet, frame, symbols, labels or basemap
+  const C = bare ? { texture: S.conv.texture } : S.conv, baseKey = bare ? 'none' : S.base;
+  canvas.width = Math.round((bare ? MW : LW) * k); canvas.height = Math.round(LH * k);
   const ctx = canvas.getContext('2d');
   ctx.setTransform(k, 0, 0, k, 0, 0);
-  ctx.fillStyle = '#F7F7F4'; ctx.fillRect(0, 0, LW, LH);
+  if (!bare){ ctx.fillStyle = '#F7F7F4'; ctx.fillRect(0, 0, LW, LH); }
 
   // --- view
   const P = S.perim;
@@ -408,8 +411,8 @@ async function render(canvas, def, k){
   // --- basemap
   ctx.save();
   ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.clip();
-  const B = BASES[S.base];
-  if (B && S.conv.base){
+  const B = BASES[baseKey];
+  if (B && C.base){
     const zt = Math.min(B.max, 17, Math.ceil(zf + Math.log2(k)));
     const sc = 2 ** (zf - zt);
     const x0 = Math.floor((cx - MW / 2) / sc / TILE), x1 = Math.floor((cx + MW / 2) / sc / TILE);
@@ -418,26 +421,26 @@ async function render(canvas, def, k){
     for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) jobs.push(tile(B.url(zt, tx, ty)).then(im => ({ im, tx, ty })));
     const got = await Promise.all(jobs);
     for (const { im, tx, ty } of got) if (im) ctx.drawImage(im, tx * TILE * sc - cx + MW / 2, ty * TILE * sc - cy + LH / 2, TILE * sc + 0.5, TILE * sc + 0.5);
-    if (S.base !== 'sat'){ ctx.fillStyle = 'rgba(247,247,244,0.25)'; ctx.fillRect(0, 0, MW, LH); }
+    if (baseKey !== 'sat'){ ctx.fillStyle = 'rgba(247,247,244,0.25)'; ctx.fillRect(0, 0, MW, LH); }
   }
   // mask outside perimeter
   ctx.beginPath(); ctx.rect(0, 0, MW, LH);
   P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])));
   ctx.closePath();
-  ctx.fillStyle = 'rgba(236,238,233,0.82)'; ctx.fill('evenodd');
+  if (!bare){ ctx.fillStyle = 'rgba(236,238,233,0.82)'; ctx.fill('evenodd'); }
 
   const finish = () => {
-    if (S.conv.grid) frame(ctx, { zf, cx, cy });
-    if (S.conv.north) northArrow(ctx, MW - FR - 44, FR + 46);
-    if (S.conv.scale) scaleBar(ctx, FR + 24, LH - FR - 26, mpp);
+    if (C.grid) frame(ctx, { zf, cx, cy });
+    if (C.north) northArrow(ctx, MW - FR - 44, FR + 46);
+    if (C.scale) scaleBar(ctx, FR + 24, LH - FR - 26, mpp);
     ctx.fillStyle = '#4a5550'; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'right';
     ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - FR - 8, LH - FR - 8);
   };
 
   // --- satellite mode
   if (useSat(def)){
-    const D = drawSat(ctx, def, { X, Y, zf, cx, cy, P });
-    ctx.restore(); finish(); sheet(ctx, def, D); return;
+    const D = drawSat(ctx, def, { X, Y, zf, cx, cy, P, C, baseKey, k });
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, D); } return;
   }
 
   // --- data
@@ -461,7 +464,7 @@ async function render(canvas, def, k){
     ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(peri); ctx.fillStyle = hatch; ctx.fill(peri);
     lo = 0; hi = 1;
   } else {
-    const step = Math.max(0.5, Math.min(2, 2 / k));
+    const step = Math.max(0.25, Math.min(2, 1.5 / k));
     const gw = Math.ceil(MW / step) + 1, gh = Math.ceil(LH / step) + 1;
     const PR = P.map(p => [X(p[0]), Y(p[1])]);
     const px0 = Math.min(...PR.map(p => p[0])), px1 = Math.max(...PR.map(p => p[0])), py0 = Math.min(...PR.map(p => p[1])), py1 = Math.max(...PR.map(p => p[1]));
@@ -490,19 +493,19 @@ async function render(canvas, def, k){
     const off = document.createElement('canvas'); off.width = gw; off.height = gh;
     const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
     for (let q = 0; q < F.length; q++){ const v = F[q]; if (v !== v) continue; const c = cc[clsOf(v)]; im.data[q * 4] = c[0]; im.data[q * 4 + 1] = c[1]; im.data[q * 4 + 2] = c[2]; im.data[q * 4 + 3] = 255; }
-    textured = S.conv.texture && SAT.ready;
+    textured = C.texture && SAT.ready;
     if (textured){
       const SH = shadeGrid({ zf, cx, cy }, step, gw, gh);
       for (let q = 0; q < F.length; q++){ if (im.data[q * 4 + 3] === 0) continue; const fct = SH[q]; for (let c = 0; c < 3; c++) im.data[q * 4 + c] = Math.min(255, im.data[q * 4 + c] * fct); }
     }
     oc.putImageData(im, 0, 0);
     ctx.save(); ctx.clip(peri);
-    ctx.globalAlpha = (textured || S.base === 'none' || !S.conv.base) ? 1 : .85; ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = (textured || baseKey === 'none' || !C.base) ? 1 : .85; ctx.imageSmoothingEnabled = false;
     ctx.drawImage(off, -step / 2, -step / 2, gw * step, gh * step);
     ctx.globalAlpha = 1;
     // isolines at every interior class break (marching squares)
     ctx.beginPath();
-    if (S.conv.iso)
+    if (C.iso)
     for (let b = 1; b < nC; b++){
       const t = br[b];
       for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++){
@@ -529,7 +532,7 @@ async function render(canvas, def, k){
     ctx.restore();
     classes = cc.map((c, i) => ({ c, a: dens ? br[i] : inv(br[i]), b: dens ? br[i + 1] : inv(br[i + 1]) }));
   }
-  if (S.conv.wetlands) for (const f of S.hum.features){
+  if (C.wetlands) for (const f of S.hum.features){
     const path = pathOf(f);
     ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(path);
     ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(path);
@@ -537,7 +540,7 @@ async function render(canvas, def, k){
 
   // perimeter line
   ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath();
-  if (S.conv.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
+  if (C.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
 
   // wetland names
   ctx.textAlign = 'center';
@@ -546,21 +549,21 @@ async function render(canvas, def, k){
   for (const [g, cs] of Object.entries(named)){
     const x = (Math.min(...cs.map(c => X(c[0]))) + Math.max(...cs.map(c => X(c[0])))) / 2;
     const y = Math.min(...cs.map(c => Y(c[1]))) - 12;
-    if (S.conv.names) haloText(ctx, 'Humedal ' + g, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
+    if (C.names) haloText(ctx, 'Humedal ' + g, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
   }
 
   // points
   for (const p of (def.mode === 'density' ? pts : pts)){
     const rad = def.mode === 'density' ? 3 + 2.2 * Math.sqrt(isNum(p.v) ? p.v : 0) : 5;
     p.rad = rad;
-    if (!S.conv.points) continue;
+    if (!C.points) continue;
     ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
     ctx.fillStyle = def.mode === 'density' ? (isNum(p.v) && p.v > 0 ? '#1c1917' : '#ffffff') : rgb(classes ? classes[classOfValue(classes, p.v)].c : ramp(.5));
     ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffffff'; ctx.stroke(); ctx.lineWidth = .8; ctx.strokeStyle = '#1b2a33'; ctx.stroke();
     p.rad = rad;
   }
   // labels: greedy placement that avoids overlaps, with a leader line when moved away
-  if (S.conv.labels){
+  if (C.labels){
     const font = '500 12.5px "IBM Plex Mono", monospace', LHh = 14, boxes = pts.map(p => [p.x - p.rad, p.y - p.rad, p.x + p.rad, p.y + p.rad]);
     ctx.font = font;
     const hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
@@ -591,6 +594,7 @@ async function render(canvas, def, k){
     }
   }
   ctx.restore();
+  if (bare) return;
   finish();
 
   // --- sheet panel
@@ -695,7 +699,7 @@ async function runSentinel(){
     st.textContent = 'Calculando mediana por banda…'; await new Promise(r => setTimeout(r, 0));
     const med = (arrs, [s, o]) => { const out = new Float32Array(N), buf = new Uint16Array(arrs.length); for (let p = 0; p < N; p++){ let k = 0; for (const a of arrs){ const v = a[p]; if (v) buf[k++] = v; } if (!k){ out[p] = NaN; continue; } const sb = buf.subarray(0, k).sort(); const m = k % 2 ? sb[k >> 1] : (sb[k / 2 - 1] + sb[k / 2]) / 2; out[p] = m * s + o; } return out; };
     SAT.band = {}; for (const [k] of BANDS) SAT.band[k] = med(stacks[k], scales[k]);
-    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.G.length, cache: {} });
+    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.G.length, cache: {}, aff: null });
     SAT.mndwi = satIdx('mndwi');
     SAT.gray = new Float32Array(N); for (let p = 0; p < N; p++) SAT.gray[p] = (SAT.band.G[p] + SAT.band.R[p] + SAT.band.S1[p]) / 3;
     { const v = Array.from(SAT.gray).filter(x => x === x).sort((a, b) => a - b); SAT.gLo = v[Math.floor(v.length * .02)]; SAT.gHi = v[Math.floor(v.length * .98)]; }
@@ -715,12 +719,20 @@ async function runSentinel(){
   } catch (e){ st.textContent = e.message; console.error(e); }
   btn.disabled = false;
 }
+function utmAffine(){
+  if (SAT.aff) return SAT.aff;
+  const P = S.perim, lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+  const x0 = Math.min(...lons), x1 = Math.max(...lons), y0 = Math.min(...lats), y1 = Math.max(...lats);
+  const c = proj4('EPSG:4326', SAT.def), p0 = c.forward([x0, y0]), px = c.forward([x1, y0]), py = c.forward([x0, y1]);
+  const ax = (px[0] - p0[0]) / (x1 - x0), bx = (py[0] - p0[0]) / (y1 - y0), ay = (px[1] - p0[1]) / (x1 - x0), by = (py[1] - p0[1]) / (y1 - y0);
+  return (SAT.aff = { forward: ([lon, lat]) => [p0[0] + ax * (lon - x0) + bx * (lat - y0), p0[1] + ay * (lon - x0) + by * (lat - y0)] });
+}
 const shadeCache = new Map();
 function shadeGrid(g, step, gw, gh){
   const key = [step, g.zf, g.cx, g.cy, SAT.version].join('|');
   if (shadeCache.has(key)) return shadeCache.get(key);
   const out = new Float32Array(gw * gh).fill(1);
-  const Z = TILE * 2 ** g.zf, conv = proj4('EPSG:4326', SAT.def), { W, H, res, ub } = SAT, span = (SAT.gHi - SAT.gLo) || 1;
+  const Z = TILE * 2 ** g.zf, conv = utmAffine(), { W, H, res, ub } = SAT, span = (SAT.gHi - SAT.gLo) || 1;
   for (let j = 0; j < gh; j++){
     const wy = j * step + g.cy - LH / 2, lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * wy / Z))) * 180 / Math.PI;
     for (let i = 0; i < gw; i++){
@@ -738,12 +750,13 @@ function shadeGrid(g, step, gw, gh){
   return out;
 }
 function drawSat(ctx, def, g){
+  const C = g.C, baseKey = g.baseKey;
   const sd = SATDEF[def.n], A = satIdx(sd.idx), { W, H, res, ub } = SAT;
   const ramp = rampFn(def.ramp);
-  const step = 1, ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
+  const step = Math.max(0.25, Math.min(1, 1 / g.k)), ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
   const Z = TILE * 2 ** g.zf;
   const vals = new Float32Array(ow * oh).fill(NaN);
-  const conv = proj4('EPSG:4326', SAT.def);
+  const conv = utmAffine();
   for (let j = 0; j < oh; j++){
     const wy = j * step + step / 2 + g.cy - LH / 2;
     const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * wy / Z))) * 180 / Math.PI;
@@ -773,16 +786,16 @@ function drawSat(ctx, def, g){
   }
   ctx.save(); ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath(); ctx.clip();
   ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, ow * step, oh * step); ctx.restore();
-  if (S.conv.wetlands) for (const f of S.hum.features){ ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(f._p); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(f._p); }
+  if (C.wetlands) for (const f of S.hum.features){ ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(f._p); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(f._p); }
   ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath();
-  if (S.conv.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
+  if (C.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
   // names + per-wetland stats
   const stats = [];
   for (const grp of ['La Vaca', 'El Burro', 'Techo']){
     const fs = S.hum.features.map((f, k) => [f, k]).filter(([f]) => GROUPS[f.properties.humedal] === grp);
     const cs = fs.flatMap(([f]) => rings(f.geometry).flat());
     const x = (Math.min(...cs.map(c => g.X(c[0]))) + Math.max(...cs.map(c => g.X(c[0])))) / 2, y = Math.min(...cs.map(c => g.Y(c[1]))) - 12;
-    ctx.textAlign = 'center'; if (S.conv.names) haloText(ctx, 'Humedal ' + grp, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
+    ctx.textAlign = 'center'; if (C.names) haloText(ctx, 'Humedal ' + grp, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
     const ids = new Set(fs.map(([, k]) => k));
     let n = 0, s = 0, w = 0;
     for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p])){ n++; if (SAT.mndwi[p] > 0){ w++; s += A[p]; } }
@@ -791,7 +804,7 @@ function drawSat(ctx, def, g){
     const mean = n2 ? s2 / n2 : NaN;
     let txt = sd.area ? `agua abierta ${fmt(ha, 2)} de ${fmt(tot, 1)} ha` : `media ${fmt(mean, 3)} · ${n2} píx.`;
     stats.push([grp, txt]);
-    if (S.conv.labels){ ctx.textAlign = 'center'; haloText(ctx, sd.area ? `${fmt(ha, 2)} ha agua` : fmt(mean, 3), x, y + 20, '500 13px "IBM Plex Mono", monospace', '#111'); }
+    if (C.labels){ ctx.textAlign = 'center'; haloText(ctx, sd.area ? `${fmt(ha, 2)} ha agua` : fmt(mean, 3), x, y + 20, '500 13px "IBM Plex Mono", monospace', '#111'); }
   }
   return {
     lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
@@ -967,9 +980,10 @@ function build(){
     let altHTML = '';
     if (def.alt) altHTML = `<label class="check" for="alt-${def.n}">${def.alt.label}</label><select id="alt-${def.n}">${def.alt.opts.map(o => `<option value="${o[0]}"${S.alt[def.n] === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>`;
     if (SATDEF[def.n]) altHTML += `<label class="check" for="src-${def.n}">Fuente</label><select id="src-${def.n}"><option value="campo"${S.src[def.n] === 'campo' ? ' selected' : ''}>Muestreo en campo</option><option value="sat"${S.src[def.n] === 'sat' ? ' selected' : ''}>Sentinel-2 (Copernicus)</option></select>`;
-    bar.innerHTML = `<div class="left"><span class="t">${String(def.n).padStart(2, '0')} · ${def.t}</span><span class="n" id="cnt-${def.n}"></span>${altHTML}</div><button type="button" id="dl-${def.n}">Descargar PNG</button>`;
+    bar.innerHTML = `<div class="left"><span class="t">${String(def.n).padStart(2, '0')} · ${def.t}</span><span class="n" id="cnt-${def.n}"></span>${altHTML}</div><div class="btns" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ghost" id="bare-${def.n}">PNG solo plano</button><button type="button" id="dl-${def.n}">Descargar PNG</button></div>`;
     card.append(cv, bar); cards.append(card);
     $('dl-' + def.n).addEventListener('click', () => download(def));
+    $('bare-' + def.n).addEventListener('click', () => downloadBare(def));
     if (def.alt) $('alt-' + def.n).addEventListener('change', e => { S.alt[def.n] = e.target.value; draw(def); });
     if (SATDEF[def.n]) $('src-' + def.n).addEventListener('change', e => { S.src[def.n] = e.target.value; draw(def); });
   }
@@ -985,9 +999,14 @@ async function drawAll(){
   $('status').textContent = 'Dibujando planos…';
   for (const def of V) await draw(def);
   $('status').textContent = `${activeRows().length} de ${S.rows.length} mediciones en el periodo · ${new Set(S.rows.map(r => r.fuente).filter(Boolean)).size} fuentes · mapa base ${$('base').selectedOptions[0].text}`;
-  $('zipall').disabled = false;
+  $('zipall').disabled = false; $('zipbare').disabled = false;
 }
 const fileName = def => `plano_${String(def.n).padStart(2, '0')}_${def.t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_$/, '')}.png`;
+async function toBlobBare(def){
+  const k = +$('res').value * LW / MW, c = document.createElement('canvas');
+  await render(c, def, k, { bare: true });
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('No se pudo generar la imagen.')), 'image/png'));
+}
 async function toBlob(def){
   const c = document.createElement('canvas');
   await render(c, def, +$('res').value);
@@ -996,6 +1015,12 @@ async function toBlob(def){
 function save(blob, name){
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function downloadBare(def){
+  const btn = $('bare-' + def.n); btn.disabled = true; btn.textContent = 'Generando…';
+  try { save(await toBlobBare(def), fileName(def).replace('.png', '_solo.png')); btn.textContent = 'Descargado'; }
+  catch (e){ btn.textContent = 'Error'; $('status').textContent = e.message; }
+  setTimeout(() => { btn.disabled = false; btn.textContent = 'PNG solo plano'; }, 1500);
 }
 async function download(def){
   const btn = $('dl-' + def.n); btn.disabled = true; btn.textContent = 'Generando…';
@@ -1014,6 +1039,16 @@ $('zipall').addEventListener('click', async () => {
   btn.textContent = 'Descargar los 20 (ZIP)'; btn.disabled = false;
 });
 
+$('zipbare').addEventListener('click', async () => {
+  const btn = $('zipbare'); btn.disabled = true;
+  try {
+    const zip = new JSZip();
+    for (const def of V){ btn.textContent = `Generando ${def.n}/20…`; zip.file(fileName(def).replace('.png', '_solo.png'), await toBlobBare(def)); }
+    btn.textContent = 'Comprimiendo…';
+    save(await zip.generateAsync({ type: 'blob' }), 'planos_solos_humedales_kennedy.zip');
+  } catch (e){ $('status').textContent = e.message; }
+  btn.textContent = '20 planos solos (ZIP)'; btn.disabled = false;
+});
 $('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
 $('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });
 $('meth').addEventListener('change', e => { S.method = e.target.value; $('pw').disabled = S.method === 'thiessen'; drawAll(); });
