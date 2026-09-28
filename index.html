@@ -98,7 +98,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
       <div class="field"><label for="pw">Interpolación IDW · potencia</label>
         <select id="pw"><option>1</option><option selected>2</option><option>3</option></select></div>
       <div class="field"><label for="res">Resolución PNG</label>
-        <select id="res"><option value="1.5">2250 × 1500 px</option><option value="2" selected>3000 × 2000 px</option><option value="3">4500 × 3000 px</option></select></div>
+        <select id="res"><option value="1.5">2250 × 1500 px</option><option value="2">3000 × 2000 px</option><option value="3">4500 × 3000 px</option><option value="5.12" selected>8K · 7680 × 5120 px</option></select></div>
       <label class="check"><input type="checkbox" id="labels" checked> Mostrar valores en los puntos</label>
     </div>
   </section>
@@ -126,7 +126,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
     <h2>Fuentes</h2>
     <ul class="sources" id="fuentes"></ul>
     <p class="hint">Polígonos de humedales: OpenStreetMap (© colaboradores de OpenStreetMap, ODbL). Perímetro: perimetro_kennedy_polygon2.kml. Los valores por punto vienen de <code>data/muestreo_real.csv</code>; cada fila indica su fuente y la tabla o página del documento. Las celdas vacías significan que la fuente no reporta esa variable, y el plano lo muestra como «sin dato».</p>
-    <p class="hint">Interpolación: distancia inversa ponderada (IDW) entre los puntos de cada humedal, recortada al polígono del humedal. Plano 18: densidad de kernel gaussiano (radio 250 m) en puntos/km². Plano 16: valor por humedal.</p>
+    <p class="hint">Interpolación: distancia inversa ponderada (IDW) con todos los puntos, sobre todo el perímetro de estudio. Plano 18: densidad de kernel gaussiano (radio 250 m) en puntos/km². Los índices Sentinel-2 cubren todo el perímetro a 20 m.</p>
   </section>
 </div>
 
@@ -183,8 +183,8 @@ const V = [
   {n:15, t:'Profundidad de lámina de agua', v:'profundidad', u:'m', col:'profundidad', dec:2,
    d:'Relaciona hidrología con hábitat, concentración de contaminantes y estacionalidad.',
    ramp:['#ffffd9','#7fcdbb','#1d91c0','#081d58']},
-  {n:16, t:'Área inundada', v:'superficie de agua', u:'ha', col:'area_inundada', dec:2, mode:'polygon',
-   d:'Variación seca/lluvias y capacidad de almacenamiento hídrico. Se colorea el humedal completo con su valor.',
+  {n:16, t:'Área inundada', v:'superficie de agua', u:'ha', col:'area_inundada', dec:2,
+   d:'Variación seca/lluvias y capacidad de almacenamiento hídrico.',
    ramp:['#fde725','#5ec962','#21918c','#3b528b','#440154']},
   {n:17, t:'Nivel freático', v:'profundidad del nivel freático', u:'m', col:'nivel_freatico', dec:2,
    d:'Ayuda a explicar conexiones entre suelo saturado, humedal y urbanización.',
@@ -338,7 +338,7 @@ async function render(canvas, def, k){
   ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.clip();
   const B = BASES[S.base];
   if (B){
-    const zt = Math.min(B.max, Math.ceil(zf + Math.log2(k)));
+    const zt = Math.min(B.max, 17, Math.ceil(zf + Math.log2(k)));
     const sc = 2 ** (zf - zt);
     const x0 = Math.floor((cx - MW / 2) / sc / TILE), x1 = Math.floor((cx + MW / 2) / sc / TILE);
     const y0 = Math.floor((cy - LH / 2) / sc / TILE), y1 = Math.floor((cy + LH / 2) / sc / TILE);
@@ -406,34 +406,41 @@ async function render(canvas, def, k){
     ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, MW, LH); ctx.restore();
   }
 
-  for (const f of S.hum.features){
-    const name = f.properties.humedal, path = pathOf(f);
-    const fp = pts.filter(p => p.f === name);
-    const gp = fp.length ? fp : pts.filter(p => GROUPS[p.f] === GROUPS[name]);
-    if (def.mode === 'density'){ ctx.fillStyle = 'rgba(40,110,150,.18)'; ctx.fill(path); }
-    else if (!gp.length){ ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill(path); ctx.fillStyle = hatch; ctx.fill(path); }
-    else if (def.mode === 'polygon'){
-      const m = gp.reduce((s, p) => s + tr(p.v), 0) / gp.length;
-      ctx.fillStyle = rgb(col(m)); ctx.fill(path);
+  // --- field values interpolated over the whole study perimeter (IDW)
+  if (def.mode !== 'density'){
+    const peri = new Path2D(); P.forEach((p, i) => i ? peri.lineTo(X(p[0]), Y(p[1])) : peri.moveTo(X(p[0]), Y(p[1]))); peri.closePath();
+    if (!pts.length){
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(peri); ctx.fillStyle = hatch; ctx.fill(peri);
     } else {
-      // IDW raster clipped to polygon
-      const bb = rings(f.geometry).flat(); const px = bb.map(c => X(c[0])), py = bb.map(c => Y(c[1]));
-      const bx0 = Math.floor(Math.min(...px)), by0 = Math.floor(Math.min(...py)), bw = Math.ceil(Math.max(...px)) - bx0 + 1, bh = Math.ceil(Math.max(...py)) - by0 + 1;
-      const res = Math.max(1, 1 / k);
-      const gw = Math.ceil(bw / res), gh = Math.ceil(bh / res);
+      const step = 2, gw = Math.ceil(MW / step), gh = Math.ceil(LH / step);
+      const PR = P.map(p => [X(p[0]), Y(p[1])]);
       const off = document.createElement('canvas'); off.width = gw; off.height = gh;
       const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
-      for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++){
-        const x = bx0 + (i + .5) * res, y = by0 + (j + .5) * res;
-        let sw = 0, sv = 0, exact = null;
-        for (const p of gp){ const d = Math.hypot(x - p.x, y - p.y); if (d < 0.5){ exact = tr(p.v); break; } const w = 1 / d ** S.pw; sw += w; sv += w * tr(p.v); }
-        const c = col(exact ?? sv / sw);
-        im.data.set([c[0], c[1], c[2], 255], (j * gw + i) * 4);
+      const tv = pts.map(p => tr(p.v));
+      for (let j = 0; j < gh; j++){
+        const y = (j + .5) * step;
+        for (let i = 0; i < gw; i++){
+          const x = (i + .5) * step;
+          if (!pip(x, y, PR)){
+            // keep a 1-cell margin so smoothing reaches the clipped edge
+            if (!pip(x + step, y, PR) && !pip(x - step, y, PR) && !pip(x, y + step, PR) && !pip(x, y - step, PR)) continue;
+          }
+          let sw = 0, sv = 0, exact = null;
+          for (let q = 0; q < pts.length; q++){ const d = Math.hypot(x - pts[q].x, y - pts[q].y); if (d < step * .5){ exact = tv[q]; break; } const w = 1 / d ** S.pw; sw += w; sv += w * tv[q]; }
+          const c = col(exact ?? sv / sw);
+          im.data.set([c[0], c[1], c[2], 255], (j * gw + i) * 4);
+        }
       }
       oc.putImageData(im, 0, 0);
-      ctx.save(); ctx.clip(path); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, bx0, by0, gw * res, gh * res); ctx.restore();
+      ctx.save(); ctx.clip(peri); ctx.globalAlpha = S.base === 'none' ? 1 : .82; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(off, 0, 0, gw * step, gh * step); ctx.restore();
     }
-    ctx.lineWidth = 1.6; ctx.strokeStyle = '#1b2a33'; ctx.stroke(path);
+  }
+  for (const f of S.hum.features){
+    const path = pathOf(f);
+    if (def.mode === 'density'){ ctx.fillStyle = 'rgba(40,110,150,.18)'; ctx.fill(path); }
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(path);
+    ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(path);
   }
 
   // perimeter line
@@ -472,7 +479,7 @@ async function render(canvas, def, k){
     symbol: def.mode === 'density' ? 'Punto de conexión errada (tamaño = número)' : 'Punto de muestreo',
     stats: ['La Vaca', 'El Burro', 'Techo'].map(g => { const vs = pts.filter(p => GROUPS[p.f] === g).map(p => p.v); return [g, vs.length ? `n=${vs.length}  ${fmt(Math.min(...vs), def.dec)} – ${fmt(Math.max(...vs), def.dec)}` : 'sin dato']; }),
     srcTxt: srcIds.length ? srcIds.map(id => (S.fuentes.find(f => f.id === id) || {}).corto || id).join('; ') : 'Sin datos para esta variable en las fuentes revisadas',
-    method: def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : def.mode === 'polygon' ? 'Valor por humedal' : 'IDW potencia ' + S.pw
+    method: def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : 'IDW potencia ' + S.pw + ' sobre el perímetro'
   });
 }
 
@@ -575,7 +582,6 @@ function drawSat(ctx, def, g){
       const gi = Math.floor((e[0] - ub[0]) / res), gj = Math.floor((ub[3] - e[1]) / res);
       if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue;
       const p = gj * W + gi;
-      if (SAT.cellFeat[p] < 0) continue;              // only inside wetlands
       vals[j * ow + i] = A[p];
     }
   }
@@ -618,7 +624,7 @@ function drawSat(ctx, def, g){
   }
   return {
     lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
-    symbol: 'Píxel Sentinel-2 de 20 m dentro del humedal',
+    symbol: 'Píxel Sentinel-2 de 20 m',
     stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]}, máscara de nubes SCL`,
     method: `Índice ${sd.idx.toUpperCase()} · 20 m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · superficie mixta agua-vegetación')
   };
@@ -689,7 +695,7 @@ function sheet(ctx, def, D){
   sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
   sym((x, yy) => { ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.6; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Límite de humedal (OSM)');
   sym((x, yy) => { ctx.setLineDash([6, 3]); ctx.strokeStyle = '#c0262d'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - 11, yy); ctx.lineTo(x + 11, yy); ctx.stroke(); ctx.setLineDash([]); }, 'Perímetro de estudio');
-  sym((x, yy) => { ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, yy - 6, 20, 12); const c = document.createElement('canvas'); c.width = c.height = 6; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.6)'; g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.stroke(); ctx.fillStyle = ctx.createPattern(c, 'repeat'); ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sin dato en la fuente');
+  sym((x, yy) => { ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, yy - 6, 20, 12); const c = document.createElement('canvas'); c.width = c.height = 6; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.6)'; g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.stroke(); ctx.fillStyle = ctx.createPattern(c, 'repeat'); ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sin dato en las fuentes');
   y += 8;
 
   // stats by wetland

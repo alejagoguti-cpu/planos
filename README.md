@@ -1,6 +1,6 @@
 # Planos hídricos · Kennedy
 
-20 planos temáticos de calidad y cantidad de agua para los humedales **La Vaca**, **El Burro** y **Techo** (localidad de Kennedy, Bogotá), dentro del perímetro `data/perimetro_kennedy_polygon2.kml`. Cada plano tiene su propia rampa de color y se descarga como PNG (hasta 4500 × 3000 px) o todos juntos en un ZIP.
+20 planos temáticos de calidad y cantidad de agua para los humedales **La Vaca**, **El Burro** y **Techo** (localidad de Kennedy, Bogotá), dentro del perímetro `data/perimetro_kennedy_polygon2.kml`. Cada plano tiene su propia rampa de color y se descarga como PNG en 8K (7680 × 5120 px) o menor o todos juntos en un ZIP.
 
 Abre `index.html` en el navegador (o publícalo con GitHub Pages: *Settings → Pages → Deploy from branch → main*).
 
@@ -21,7 +21,7 @@ También puedes cargar tu propio CSV (mismas columnas) o cambiar el perímetro (
 
 1 pH · 2 Eutrofización (DBO5+DQO+N+P) · 3 Oxígeno disuelto · 4 Fósforo total · 5 NTK / NH₄ · 6 DQO · 7 DBO5 · 8 Relación DBO/DQO · 9 Turbiedad · 10 SST · 11 Conductividad · 12 Grasas y aceites · 13 Coliformes fecales · 14 Coliformes totales · 15 Profundidad de lámina · 16 Área inundada · 17 Nivel freático · 18 Conexiones erradas (densidad) · 19 Caudal de entrada · 20 Carga contaminante (concentración × caudal)
 
-Métodos: IDW entre los puntos de cada humedal recortado a su polígono; plano 18 con densidad de kernel (250 m); plano 16 por humedal o con Sentinel-2.
+Métodos: IDW con todos los puntos sobre todo el perímetro de estudio; plano 18 con densidad de kernel (250 m); índices Sentinel-2 sobre todo el perímetro a 20 m.
 
 ## NDVI
 
