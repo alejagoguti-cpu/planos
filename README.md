@@ -23,7 +23,7 @@ También puedes cargar tu propio CSV (mismas columnas) o cambiar el perímetro (
 
 1 pH · 2 Eutrofización (DBO5+DQO+N+P) · 3 Oxígeno disuelto · 4 Fósforo total · 5 NTK / NH₄ · 6 DQO · 7 DBO5 · 8 Relación DBO/DQO · 9 Turbiedad · 10 SST · 11 Conductividad · 12 Grasas y aceites · 13 Coliformes fecales · 14 Coliformes totales · 15 Profundidad de lámina · 16 Área inundada · 17 Nivel freático · 18 Conexiones erradas · 19 Caudal de entrada · 20 Carga contaminante (concentración × caudal)
 
-Métodos: superficies IDW (o Thiessen) sobre todo el perímetro, en clases por cuantiles con isolíneas, sin difuminado; índices Sentinel-2 píxel a píxel a 10 m. Marco con coordenadas geográficas (grados, minutos y segundos), norte y escala gráfica.
+Métodos: superficies IDW (o Thiessen) sobre todo el perímetro, en clases por cuantiles con isolíneas, sin difuminado; índices Sentinel-2 píxel a píxel a 10 m. Marco con coordenadas geográficas (grados, minutos y segundos), norte y escala gráfica. Textura: brillo real de Sentinel-2 a 10 m como sombreado (no altera valores). Todas las convenciones se pueden prender o apagar.
 
 ## NDVI
 
