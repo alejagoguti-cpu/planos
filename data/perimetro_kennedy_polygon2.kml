@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="perimetro_kennedy_polygon2" id="perimetro_kennedy_polygon2">
+	<SimpleField name="Layer" type="string"></SimpleField>
+	<SimpleField name="PaperSpace" type="string"></SimpleField>
+	<SimpleField name="SubClasses" type="string"></SimpleField>
+	<SimpleField name="Linetype" type="string"></SimpleField>
+	<SimpleField name="EntityHand" type="string"></SimpleField>
+	<SimpleField name="Text" type="string"></SimpleField>
+</Schema>
+<Folder><name>perimetro_kennedy_polygon2</name>
+  <Placemark>
+	<Style><LineStyle><color>FF1c1ae4</color><width>2.72125</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#perimetro_kennedy_polygon2">
+		<SimpleData name="Layer">0</SimpleData>
+		<SimpleData name="PaperSpace">?</SimpleData>
+		<SimpleData name="SubClasses">AcDbEntity:AcDbHatch</SimpleData>
+		<SimpleData name="EntityHand">20000</SimpleData>
+		<SimpleData name="Text">SOLID</SimpleData>
+	</SchemaData></ExtendedData>
+      <MultiGeometry><Polygon><outerBoundaryIs><LinearRing><coordinates>-74.1644431167385,4.6162329942466 -74.1833500778658,4.65190118319509 -74.1423562759027,4.67377766737728 -74.1234507559979,4.63810837712567 -74.1644431167385,4.6162329942466</coordinates></LinearRing></outerBoundaryIs></Polygon></MultiGeometry>
+  </Placemark>
+</Folder>
+</Document></kml>

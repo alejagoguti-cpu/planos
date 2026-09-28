@@ -1,0 +1,645 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NDVI Savitzky-Golay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F3F5F1; --surface:#FFFFFF; --sunk:#E9EDE7; --ink:#18211C; --muted:#5A665E; --line:#D6DDD5;
+  --accent:#2C6647; --accent-ink:#FFFFFF; --before:#B04A32; --after:#2E7D4F; --warn:#9A6A12; --bad:#A63A2B;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111613; --surface:#18201B; --sunk:#1F2922; --ink:#E2E9E3; --muted:#98A49B; --line:#2B362F;
+    --accent:#7CC39A; --accent-ink:#0E1A13; --before:#E27B5E; --after:#6CC08F; --warn:#E0B055; --bad:#EE7B6A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111613; --surface:#18201B; --sunk:#1F2922; --ink:#E2E9E3; --muted:#98A49B; --line:#2B362F;
+  --accent:#7CC39A; --accent-ink:#0E1A13; --before:#E27B5E; --after:#6CC08F; --warn:#E0B055; --bad:#EE7B6A;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:4px}
+h1{font-family:var(--cond);font-weight:600;font-size:28px;line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--cond);font-weight:600;font-size:17px;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+.lede code,.mono{font-family:var(--mono);font-size:12.5px}
+.grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.main{display:flex;flex-direction:column;gap:20px;min-width:0}
+label,.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.field{display:flex;flex-direction:column;gap:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input,select{font:inherit;font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sub{display:flex;flex-direction:column;gap:3px}
+.sub span{font-size:11px;color:var(--muted);font-family:var(--mono)}
+button{font:inherit;font-weight:600;border-radius:5px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:11.5px;padding:2px 7px;border-radius:99px;background:var(--sunk);color:var(--ink)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.warn{color:var(--warn)}
+/* pipeline */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.step{border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.step .t{display:flex;gap:8px;align-items:center;font-weight:500}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.step code{font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.step[data-s="run"] .dot{background:var(--warn);animation:pulse 1s infinite alternate}
+.step[data-s="done"] .dot{background:var(--after)}
+.step[data-s="err"] .dot{background:var(--bad)}
+@keyframes pulse{to{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.step[data-s="run"] .dot{animation:none}}
+.bar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.5em;overflow-wrap:anywhere}
+.status.err{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);padding:8px 12px;display:flex;flex-direction:column}
+.stat b{font-family:var(--mono);font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted)}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+#chart{width:100%;display:block}
+#chart text{fill:var(--muted);font-family:var(--mono);font-size:10.5px}
+.readout{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.5em;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;padding:5px 10px;font-size:13px}
+.tabs button[aria-pressed="true"]{background:var(--sunk);color:var(--ink);border-color:var(--muted)}
+.mapctl{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.mapctl .field{width:150px}
+.facets{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+@media (max-width:700px){.facets{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.facet{display:flex;flex-direction:column;gap:2px;min-width:0}
+.facet canvas{width:100%;height:auto;image-rendering:pixelated;background:var(--sunk);border-radius:3px;display:block}
+.facet span{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbar{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cbar canvas{height:10px;width:200px;max-width:50vw;border-radius:2px}
+.empty{color:var(--muted);font-size:13px;padding:24px 0;text-align:center}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header>
+    <p style="margin:0"><a href="index.html" style="color:var(--accent)">← Planos hídricos Kennedy</a></p>
+    <h1>NDVI Savitzky-Golay</h1>
+    <p class="lede">Rellena los huecos de la serie de NDVI de Sentinel-2 con la misma lógica del notebook. Busca escenas <code>sentinel-2-c1-l2a</code> en Earth Search, enmascara nubes con la banda SCL, toma el máximo semanal, interpola los huecos y suaviza con un filtro Savitzky-Golay. Todo se calcula en tu navegador.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off">
+      <h2>Parámetros</h2>
+      <div class="field">
+        <label for="preset">Zona de estudio</label>
+        <select id="preset">
+          <option value="bog">Bogotá (tu notebook)</option>
+          <option value="tut">Tutorial original (Irán)</option>
+          <option value="custom">Personalizada</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="lbl">ROI · lon/lat WGS84</span>
+        <div class="row2">
+          <div class="sub"><span>oeste</span><input id="w" type="number" step="0.00001" value="-74.18336"></div>
+          <div class="sub"><span>sur</span><input id="s" type="number" step="0.00001" value="4.58000"></div>
+          <div class="sub"><span>este</span><input id="e" type="number" step="0.00001" value="-74.12345"></div>
+          <div class="sub"><span>norte</span><input id="n" type="number" step="0.00001" value="4.63811"></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="d0">Desde</label><input id="d0" type="date" value="2023-01-01"></div>
+        <div class="field"><label for="d1">Hasta</label><input id="d1" type="date" value="2025-12-31"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="res">Resolución</label>
+          <select id="res">
+            <option value="10">10 m (lento)</option>
+            <option value="20">20 m</option>
+            <option value="30">30 m</option>
+            <option value="60" selected>60 m</option>
+            <option value="100">100 m</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cc">Nubosidad máx.</label>
+          <select id="cc">
+            <option value="101" selected>Sin filtro</option>
+            <option value="80">&lt; 80 %</option>
+            <option value="60">&lt; 60 %</option>
+            <option value="40">&lt; 40 %</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="wl">Ventana SG</label><input id="wl" type="number" min="3" step="2" value="5"></div>
+        <div class="field"><label for="po">Orden polinomio</label><input id="po" type="number" min="1" max="5" value="2"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Clases SCL enmascaradas</span>
+        <div class="chips"><span class="chip">3 sombra de nube</span><span class="chip">8 nube prob. media</span><span class="chip">9 nube prob. alta</span><span class="chip">10 cirros</span></div>
+      </div>
+      <p class="hint" id="reshint">El notebook usa 10 m en EPSG:3857. Aquí cada escena se lee en su UTM nativa desde las vistas reducidas del COG, así que 60 m es mucho más rápido y la mediana apenas cambia.</p>
+      <div class="btns">
+        <button type="submit" id="run">Calcular</button>
+        <button type="button" class="ghost" id="stop" disabled>Detener</button>
+      </div>
+    </form>
+
+    <div class="main">
+      <section class="panel">
+        <div class="head"><h2>Proceso</h2><span class="status" id="status">Preparando…</span></div>
+        <div class="bar"><i id="prog"></i></div>
+        <ol class="steps" id="steps"></ol>
+        <div class="stats">
+          <div class="stat"><b id="k1">–</b><span>escenas encontradas</span></div>
+          <div class="stat"><b id="k2">–</b><span>escenas leídas</span></div>
+          <div class="stat"><b id="k3">–</b><span>semanas</span></div>
+          <div class="stat"><b id="k4">–</b><span>semanas sin dato (mediana)</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="head">
+          <h2>Mediana espacial del NDVI por semana</h2>
+          <div class="btns"><button type="button" class="ghost" id="copy" disabled>Copiar CSV</button></div>
+        </div>
+        <div class="legend"><span><i style="background:var(--before)"></i>Antes: máximo semanal con huecos</span><span><i style="background:var(--after)"></i>Después: interpolado + Savitzky-Golay</span></div>
+        <div class="readout" id="readout">Pasa el cursor sobre la gráfica para ver cada semana.</div>
+        <div id="chartbox"><div class="empty">La gráfica aparece cuando termina el cálculo.</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="head"><h2>Mapas por semana</h2><div class="cbar" id="cbar"></div></div>
+        <div class="mapctl">
+          <div class="tabs" id="stage">
+            <button type="button" data-k="weekly" aria-pressed="true">Máximo semanal</button>
+            <button type="button" data-k="interp" aria-pressed="false">Interpolado</button>
+            <button type="button" data-k="sg" aria-pressed="false">Filtrado SG</button>
+          </div>
+          <div class="field"><label for="m0">Desde mes</label><input id="m0" type="month" value="2024-01"></div>
+          <div class="field"><label for="m1">Hasta mes</label><input id="m1" type="month" value="2024-03"></div>
+        </div>
+        <div id="facets"><div class="empty">Los mapas aparecen cuando termina el cálculo.</div></div>
+        <p class="hint">La escala de color usa los percentiles 2 y 98 de las semanas mostradas, como <code class="mono">robust=True</code> en xarray.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.15.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script>
+(() => {
+const STAC = 'https://earth-search.aws.element84.com/v1/search';
+const CLOUD = new Set([3, 8, 9, 10]);
+const PRESETS = {
+  bog: [-74.18336, 4.58000, -74.12345, 4.63811],
+  tut: [45.731184, 36.905119, 45.779577, 36.942738]
+};
+const STEPS = [
+  ['Buscar escenas', "catalog.search(collections=['sentinel-2-c1-l2a'])"],
+  ['Leer red, nir, scl', "stackstac.stack(assets=['red','nir','scl'])"],
+  ['Máscara SCL + NDVI', 'scl.isin([3,8,9,10]) · (nir-red)/(nir+red)'],
+  ['Máximo semanal', "resample(time='W').max()"],
+  ['Interpolar huecos', "interpolate_na('linear', 'extrapolate') · ffill · bfill"],
+  ['Filtro Savitzky-Golay', 'savgol_filter(window_length, polyorder, mode=interp)'],
+  ['Mediana espacial', "median(dim=['x','y'])"]
+];
+const $ = id => document.getElementById(id);
+const stepsEl = $('steps');
+stepsEl.innerHTML = STEPS.map((s, i) => `<li class="step" data-s="idle"><div class="t"><span class="dot"></span><span class="n">${i + 1}</span>${s[0]}</div><code>${s[1]}</code></li>`).join('');
+const setStep = (i, s) => { stepsEl.children[i].dataset.s = s; };
+const status = (t, err) => { const el = $('status'); el.textContent = t; el.classList.toggle('err', !!err); };
+const prog = f => { $('prog').style.width = (Math.max(0, Math.min(1, f)) * 100).toFixed(1) + '%'; };
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+let R = null;          // results
+let abort = false;
+let stage = 'weekly';
+
+// ---------- form ----------
+$('preset').addEventListener('change', e => {
+  const p = PRESETS[e.target.value];
+  if (!p) return;
+  ['w', 's', 'e', 'n'].forEach((k, i) => $(k).value = p[i]);
+});
+['w', 's', 'e', 'n'].forEach(k => $(k).addEventListener('input', () => { $('preset').value = 'custom'; }));
+$('res').addEventListener('change', () => {
+  $('reshint').classList.toggle('warn', +$('res').value <= 20);
+});
+$('stop').addEventListener('click', () => { abort = true; status('Deteniendo…'); });
+$('form').addEventListener('submit', e => { e.preventDefault(); run(); });
+
+// ---------- geometry ----------
+function utmDef(epsg) {
+  const south = epsg >= 32701 && epsg <= 32760;
+  const zone = south ? epsg - 32700 : epsg - 32600;
+  return `+proj=utm +zone=${zone}${south ? ' +south' : ''} +datum=WGS84 +units=m +no_defs`;
+}
+function bboxIn(epsg, roi) {
+  const def = utmDef(epsg);
+  const [w, s, e, n] = roi, xs = [], ys = [];
+  for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
+    const p = proj4('EPSG:4326', def, [w + (e - w) * i / 4, s + (n - s) * j / 4]);
+    xs.push(p[0]); ys.push(p[1]);
+  }
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+}
+const itemEpsg = it => {
+  const p = it.properties;
+  if (p['proj:epsg']) return +p['proj:epsg'];
+  if (p['proj:code']) return +String(p['proj:code']).split(':')[1];
+  return null;
+};
+
+// ---------- time ----------
+const DAY = 86400000;
+function weekLabel(ms) {             // pandas 'W' = W-SUN, right-labelled
+  const d = new Date(ms);
+  const day0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const dow = new Date(day0).getUTCDay();
+  return day0 + ((7 - dow) % 7) * DAY;
+}
+const fmtDate = ms => new Date(ms).toISOString().slice(0, 10);
+
+// ---------- STAC search ----------
+async function search(roi, d0, d1) {
+  let body = { collections: ['sentinel-2-c1-l2a'], bbox: roi, datetime: `${d0}T00:00:00Z/${d1}T23:59:59Z`, limit: 100 };
+  let url = STAC, method = 'POST', out = [];
+  for (let page = 0; page < 60; page++) {
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: method === 'POST' ? JSON.stringify(body) : undefined });
+    if (!res.ok) throw new Error(`Earth Search respondió ${res.status}. Revisa la ROI y las fechas.`);
+    const j = await res.json();
+    out.push(...j.features);
+    status(`Buscando escenas… ${out.length}`);
+    const next = (j.links || []).find(l => l.rel === 'next');
+    if (!next || !j.features.length || abort) break;
+    url = next.href; method = next.method || 'GET';
+    if (next.body) body = next.merge ? { ...body, ...next.body } : next.body;
+  }
+  return out;
+}
+
+// ---------- raster read ----------
+async function readBand(asset, bbox, W, H) {
+  const tiff = await GeoTIFF.fromUrl(asset.href);
+  const r = await tiff.readRasters({ bbox, width: W, height: H, fillValue: 0, interleave: true });
+  return r;
+}
+
+async function pool(items, n, fn) {
+  let i = 0;
+  const workers = Array.from({ length: n }, async () => {
+    while (i < items.length && !abort) { const k = i++; await fn(items[k], k); }
+  });
+  await Promise.all(workers);
+}
+
+// ---------- math ----------
+function nanMedian(arr) {
+  const v = [];
+  for (let i = 0; i < arr.length; i++) { const x = arr[i]; if (x === x) v.push(x); }
+  if (!v.length) return NaN;
+  const f = Float64Array.from(v).sort();
+  const m = f.length >> 1;
+  return f.length % 2 ? f[m] : (f[m - 1] + f[m]) / 2;
+}
+// Savitzky-Golay coefficients: least-squares poly fit of order po on window wl, evaluated at offset `at`
+function sgWeights(wl, po, at) {
+  const half = (wl - 1) / 2, m = po + 1;
+  const xs = Array.from({ length: wl }, (_, k) => k - half);
+  // A: wl x m, solve (A^T A) c = A^T y ; weights = e_at^T (A^T A)^-1 A^T
+  const A = xs.map(x => Array.from({ length: m }, (_, p) => x ** p));
+  const ATA = Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => A.reduce((s, r) => s + r[i] * r[j], 0)));
+  const inv = invert(ATA);
+  const ev = Array.from({ length: m }, (_, p) => at ** p);
+  const t = ev.map((_, j) => ev.reduce((s, e, i) => s + e * inv[i][j], 0));
+  return A.map(r => r.reduce((s, a, p) => s + a * t[p], 0));
+}
+function invert(M) {
+  const n = M.length, a = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => +(i === j))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+    [a[c], a[p]] = [a[p], a[c]];
+    const d = a[c][c]; for (let j = 0; j < 2 * n; j++) a[c][j] /= d;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = a[r][c]; for (let j = 0; j < 2 * n; j++) a[r][j] -= f * a[c][j]; }
+  }
+  return a.map(r => r.slice(n));
+}
+
+// ---------- main ----------
+async function run() {
+  abort = false;
+  $('run').disabled = true; $('stop').disabled = false; $('copy').disabled = true;
+  STEPS.forEach((_, i) => setStep(i, 'idle'));
+  ['k1', 'k2', 'k3', 'k4'].forEach(k => $(k).textContent = '–');
+  prog(0);
+  let cur = 0;
+  try {
+    const roi = ['w', 's', 'e', 'n'].map(k => parseFloat($(k).value));
+    if (roi.some(isNaN) || roi[0] >= roi[2] || roi[1] >= roi[3]) throw new Error('La ROI no es válida: oeste debe ser menor que este y sur menor que norte.');
+    const d0 = $('d0').value, d1 = $('d1').value;
+    if (!d0 || !d1 || d0 > d1) throw new Error('Revisa las fechas: "Desde" debe ser anterior a "Hasta".');
+    const res = +$('res').value, ccMax = +$('cc').value;
+    let wl = parseInt($('wl').value, 10), po = parseInt($('po').value, 10);
+    if (!(wl >= 3) || wl % 2 === 0) throw new Error('La ventana SG debe ser un número impar mayor o igual a 3.');
+    if (!(po >= 0) || po >= wl) throw new Error('El orden del polinomio debe ser menor que la ventana.');
+
+    // 1. search
+    setStep(0, 'run'); status('Buscando escenas…');
+    let items = await search(roi, d0, d1);
+    const found = items.length;
+    items = items.filter(it => (it.properties['eo:cloud_cover'] ?? 0) < ccMax && itemEpsg(it));
+    items.sort((a, b) => Date.parse(a.properties.datetime) - Date.parse(b.properties.datetime));
+    $('k1').textContent = ccMax > 100 ? found : `${items.length}/${found}`;
+    if (!items.length) throw new Error('No hay escenas para esa zona y fechas. Amplía el rango o quita el filtro de nubosidad.');
+    setStep(0, 'done'); cur = 1;
+
+    // grid
+    const refEpsg = itemEpsg(items[0]);
+    const refBox = bboxIn(refEpsg, roi);
+    const W = Math.max(1, Math.round((refBox[2] - refBox[0]) / res));
+    const H = Math.max(1, Math.round((refBox[3] - refBox[1]) / res));
+    const N = W * H;
+    if (N > 600000) throw new Error(`La cuadrícula tendría ${W}×${H} píxeles. Usa una resolución más gruesa o una ROI más pequeña.`);
+    const boxCache = {};
+
+    // weeks
+    const t0 = weekLabel(Date.parse(items[0].properties.datetime));
+    const t1 = weekLabel(Date.parse(items[items.length - 1].properties.datetime));
+    const T = Math.round((t1 - t0) / (7 * DAY)) + 1;
+    const times = Array.from({ length: T }, (_, i) => t0 + i * 7 * DAY);
+    const weekly = new Float32Array(T * N).fill(NaN);
+
+    // 2-4. read + mask + NDVI + weekly max
+    setStep(1, 'run'); setStep(2, 'run'); setStep(3, 'run');
+    let done = 0, failed = 0;
+    await pool(items, 6, async it => {
+      const ep = itemEpsg(it);
+      const box = boxCache[ep] || (boxCache[ep] = bboxIn(ep, roi));
+      try {
+        const [red, nir, scl] = await Promise.all(['red', 'nir', 'scl'].map(k => readBand(it.assets[k], box, W, H)));
+        const rb = (it.assets.red['raster:bands'] || [{}])[0], nb = (it.assets.nir['raster:bands'] || [{}])[0];
+        const rs = rb.scale ?? 1, ro = rb.offset ?? 0, ns = nb.scale ?? 1, no = nb.offset ?? 0;
+        const ti = Math.round((weekLabel(Date.parse(it.properties.datetime)) - t0) / (7 * DAY));
+        const base = ti * N;
+        for (let p = 0; p < N; p++) {
+          const R0 = red[p], N0 = nir[p];
+          if (R0 === 0 || N0 === 0 || CLOUD.has(scl[p])) continue;
+          const r = R0 * rs + ro, n = N0 * ns + no;
+          const v = (n - r) / (n + r);
+          if (!isFinite(v)) continue;
+          const o = weekly[base + p];
+          if (!(o >= v)) weekly[base + p] = v;
+        }
+      } catch (err) { failed++; console.warn(it.id, err); }
+      done++;
+      prog(done / items.length * 0.9);
+      $('k2').textContent = failed ? `${done - failed} (${failed} fallidas)` : done;
+      status(`Leyendo escenas… ${done}/${items.length} · ${it.properties.datetime.slice(0, 10)}`);
+    });
+    if (abort) throw new Error('Cálculo detenido.');
+    if (done === failed) throw new Error('No se pudo leer ninguna escena. Revisa tu conexión e inténtalo de nuevo.');
+    [1, 2, 3].forEach(i => setStep(i, 'done')); cur = 4;
+    $('k3').textContent = T;
+
+    // 5. interpolate per pixel (linear, extrapolate at edges, then ffill/bfill)
+    setStep(4, 'run'); status('Interpolando huecos…'); await tick();
+    const interp = new Float32Array(T * N).fill(NaN);
+    const idx = new Int32Array(T);
+    for (let p = 0; p < N; p++) {
+      let k = 0;
+      for (let t = 0; t < T; t++) if (weekly[t * N + p] === weekly[t * N + p]) idx[k++] = t;
+      if (k === 0) continue;
+      if (k === 1) { const v = weekly[idx[0] * N + p]; for (let t = 0; t < T; t++) interp[t * N + p] = v; continue; }
+      let j = 0;
+      for (let t = 0; t < T; t++) {
+        const v = weekly[t * N + p];
+        if (v === v) { interp[t * N + p] = v; continue; }
+        while (j < k - 2 && idx[j + 1] < t) j++;
+        // choose bracketing pair (or edge pair for extrapolation)
+        let a = j, b = j + 1;
+        if (t < idx[0]) { a = 0; b = 1; }
+        else if (t > idx[k - 1]) { a = k - 2; b = k - 1; }
+        const ta = idx[a], tb = idx[b], va = weekly[ta * N + p], vb = weekly[tb * N + p];
+        interp[t * N + p] = va + (vb - va) * (t - ta) / (tb - ta);
+      }
+    }
+    setStep(4, 'done'); cur = 5; prog(0.94);
+
+    // 6. Savitzky-Golay along time (mode='interp')
+    setStep(5, 'run'); status('Aplicando filtro Savitzky-Golay…'); await tick();
+    const sg = new Float32Array(T * N).fill(NaN);
+    const half = (wl - 1) / 2;
+    if (T >= wl) {
+      const center = sgWeights(wl, po, 0);
+      const edgeL = Array.from({ length: half }, (_, i) => sgWeights(wl, po, i - half));
+      const edgeR = Array.from({ length: half }, (_, i) => sgWeights(wl, po, i + 1));
+      for (let p = 0; p < N; p++) {
+        if (interp[p] !== interp[p]) continue;
+        for (let t = 0; t < T; t++) {
+          let w, s0;
+          if (t < half) { w = edgeL[t]; s0 = 0; }
+          else if (t >= T - half) { w = edgeR[t - (T - half)]; s0 = T - wl; }
+          else { w = center; s0 = t - half; }
+          let acc = 0;
+          for (let q = 0; q < wl; q++) acc += w[q] * interp[(s0 + q) * N + p];
+          sg[t * N + p] = acc;
+        }
+      }
+    } else {
+      sg.set(interp);
+      status(`Hay ${T} semanas, menos que la ventana SG (${wl}); se omite el filtro.`);
+    }
+    setStep(5, 'done'); cur = 6; prog(0.98);
+
+    // 7. spatial median
+    setStep(6, 'run'); status('Calculando medianas…'); await tick();
+    const before = [], after = [];
+    for (let t = 0; t < T; t++) {
+      before.push(nanMedian(weekly.subarray(t * N, (t + 1) * N)));
+      after.push(nanMedian(sg.subarray(t * N, (t + 1) * N)));
+    }
+    setStep(6, 'done'); prog(1);
+    const gaps = before.filter(v => v !== v).length;
+    $('k4').textContent = `${gaps} (${Math.round(gaps / T * 100)} %)`;
+
+    R = { W, H, N, T, times, weekly, interp, sg, before, after };
+    status(`Listo · cuadrícula ${W}×${H} a ${res} m · EPSG:${refEpsg}`);
+    $('copy').disabled = false;
+    // default map range: keep user's months if inside, else first 3 months
+    const m0 = $('m0').value, m1 = $('m1').value;
+    const first = fmtDate(times[0]).slice(0, 7), last = fmtDate(times[T - 1]).slice(0, 7);
+    if (!m0 || m0 > last || m1 < first) {
+      const d = new Date(times[0]);
+      $('m0').value = first;
+      $('m1').value = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 2, 1)).toISOString().slice(0, 7);
+    }
+    drawChart(); drawMaps();
+  } catch (err) {
+    if (cur < STEPS.length) setStep(cur, 'err');
+    for (let i = 0; i < STEPS.length; i++) if (stepsEl.children[i].dataset.s === 'run') setStep(i, 'err');
+    status(err.message || String(err), true);
+    console.error(err);
+  } finally {
+    $('run').disabled = false; $('stop').disabled = true;
+  }
+}
+
+// ---------- chart ----------
+const box = $('chartbox');
+let chartGeom = null;
+function drawChart() {
+  if (!R) return;
+  const { times, before, after, T } = R;
+  const Wd = Math.max(320, box.clientWidth), ph = 140, gap = 26, ml = 44, mr = 12, mt = 16, mb = 26;
+  const Hd = mt + ph * 2 + gap + mb;
+  const vals = [...before, ...after].filter(v => v === v);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.08 || 0.05; lo -= pad; hi += pad;
+  const x = i => ml + (Wd - ml - mr) * (T === 1 ? 0.5 : i / (T - 1));
+  const tMin = times[0], tMax = times[T - 1];
+  const xt = ms => ml + (Wd - ml - mr) * (tMax === tMin ? 0.5 : (ms - tMin) / (tMax - tMin));
+  const y = (v, k) => mt + k * (ph + gap) + ph * (1 - (v - lo) / (hi - lo));
+  // y ticks
+  const step = niceStep((hi - lo) / 4);
+  const yt = []; for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) yt.push(+v.toFixed(6));
+  // x ticks: months
+  const span = (tMax - tMin) / (30 * DAY);
+  const every = span > 30 ? 6 : span > 12 ? 3 : 1;
+  const xtks = [];
+  const d = new Date(tMin); let mm = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+  while (mm <= tMax) { const dm = new Date(mm); if (dm.getUTCMonth() % every === 0) xtks.push(mm); mm = Date.UTC(dm.getUTCFullYear(), dm.getUTCMonth() + 1, 1); }
+  const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  let s = `<svg id="chart" viewBox="0 0 ${Wd} ${Hd}" width="${Wd}" height="${Hd}" role="img" aria-label="Mediana del NDVI por semana, antes y después del filtro">`;
+  for (let k = 0; k < 2; k++) {
+    const top = mt + k * (ph + gap);
+    s += `<rect x="${ml}" y="${top}" width="${Wd - ml - mr}" height="${ph}" fill="none" stroke="var(--line)"/>`;
+    for (const v of yt) s += `<line x1="${ml}" x2="${Wd - mr}" y1="${y(v, k)}" y2="${y(v, k)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="${ml - 6}" y="${y(v, k) + 3.5}" text-anchor="end">${v.toFixed(2)}</text>`;
+    for (const m of xtks) s += `<line x1="${xt(m)}" x2="${xt(m)}" y1="${top}" y2="${top + ph}" stroke="var(--line)" stroke-dasharray="2 3"/>`;
+    s += `<text x="${ml + 6}" y="${top + 13}" style="fill:${k ? 'var(--after)' : 'var(--before)'}">${k ? 'después' : 'antes'}</text>`;
+  }
+  for (const m of xtks) {
+    const dm = new Date(m), px = xt(m);
+    const anchor = px > Wd - mr - 24 ? 'end' : px < ml + 24 ? 'start' : 'middle';
+    s += `<text x="${px}" y="${Hd - 8}" text-anchor="${anchor}">${MES[dm.getUTCMonth()]} ${String(dm.getUTCFullYear()).slice(2)}</text>`;
+  }
+  // before: line segments broken at gaps + dots
+  const seg = (arr, k) => { let dd = '', pen = false; arr.forEach((v, i) => { if (v === v) { dd += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v, k).toFixed(1); pen = true; } else pen = false; }); return dd; };
+  s += `<path d="${seg(before, 0)}" fill="none" stroke="var(--before)" stroke-width="1.4" stroke-linejoin="round"/>`;
+  before.forEach((v, i) => { if (v === v) s += `<circle cx="${x(i).toFixed(1)}" cy="${y(v, 0).toFixed(1)}" r="1.8" fill="var(--before)"/>`; });
+  s += `<path d="${seg(after, 1)}" fill="none" stroke="var(--after)" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s += `<line id="cross" x1="0" x2="0" y1="${mt}" y2="${mt + 2 * ph + gap}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
+  s += `<circle id="cb" r="3.5" fill="var(--before)" stroke="var(--surface)" stroke-width="1.5" visibility="hidden"/><circle id="ca" r="3.5" fill="var(--after)" stroke="var(--surface)" stroke-width="1.5" visibility="hidden"/>`;
+  s += `</svg>`;
+  box.innerHTML = s;
+  chartGeom = { x, y, ml, mr, Wd };
+  const svg = $('chart');
+  svg.addEventListener('pointermove', ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * Wd / r.width;
+    const i = Math.max(0, Math.min(T - 1, Math.round((px - ml) / (Wd - ml - mr) * (T - 1))));
+    const cx = x(i);
+    const cr = $('cross'); cr.setAttribute('x1', cx); cr.setAttribute('x2', cx); cr.setAttribute('visibility', 'visible');
+    const cb = $('cb'), ca = $('ca');
+    if (before[i] === before[i]) { cb.setAttribute('cx', cx); cb.setAttribute('cy', y(before[i], 0)); cb.setAttribute('visibility', 'visible'); } else cb.setAttribute('visibility', 'hidden');
+    if (after[i] === after[i]) { ca.setAttribute('cx', cx); ca.setAttribute('cy', y(after[i], 1)); ca.setAttribute('visibility', 'visible'); } else ca.setAttribute('visibility', 'hidden');
+    $('readout').textContent = `semana que termina el ${fmtDate(times[i])} · antes ${before[i] === before[i] ? before[i].toFixed(3) : 'sin dato'} · después ${after[i] === after[i] ? after[i].toFixed(3) : 'sin dato'}`;
+  });
+  svg.addEventListener('pointerleave', () => { ['cross', 'cb', 'ca'].forEach(id => $(id).setAttribute('visibility', 'hidden')); });
+}
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(raw)), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(drawChart, 120); }).observe(box);
+
+$('copy').addEventListener('click', async () => {
+  if (!R) return;
+  const csv = 'time,ndvi_before,ndvi_after\n' + R.times.map((t, i) => `${fmtDate(t)},${R.before[i] === R.before[i] ? R.before[i].toFixed(5) : ''},${R.after[i] === R.after[i] ? R.after[i].toFixed(5) : ''}`).join('\n');
+  try { await navigator.clipboard.writeText(csv); $('copy').textContent = 'CSV copiado'; }
+  catch { $('readout').textContent = 'Tu navegador no permitió copiar. Abre la consola para ver el CSV.'; console.log(csv); }
+  setTimeout(() => $('copy').textContent = 'Copiar CSV', 1800);
+});
+
+// ---------- maps ----------
+const RDYLGN = [[165,0,38],[215,48,39],[244,109,67],[253,174,97],[254,224,139],[255,255,191],[217,239,139],[166,217,106],[102,189,99],[26,152,80],[0,104,55]];
+function cmap(u) {
+  u = Math.max(0, Math.min(1, u)) * (RDYLGN.length - 1);
+  const i = Math.min(RDYLGN.length - 2, Math.floor(u)), f = u - i, a = RDYLGN[i], b = RDYLGN[i + 1];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+$('stage').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  stage = b.dataset.k;
+  [...$('stage').children].forEach(x => x.setAttribute('aria-pressed', x === b));
+  drawMaps();
+});
+$('m0').addEventListener('change', drawMaps);
+$('m1').addEventListener('change', drawMaps);
+
+function drawMaps() {
+  const host = $('facets');
+  if (!R) return;
+  const { W, H, N, times } = R;
+  const data = R[stage];
+  const m0 = $('m0').value || '0000-00', m1 = $('m1').value || '9999-99';
+  let sel = times.map((t, i) => [t, i]).filter(([t]) => { const m = fmtDate(t).slice(0, 7); return m >= m0 && m <= m1; });
+  if (!sel.length) { host.innerHTML = '<div class="empty">No hay semanas en ese rango de meses.</div>'; $('cbar').innerHTML = ''; return; }
+  const capped = sel.length > 70; if (capped) sel = sel.slice(0, 70);
+  // robust limits (2–98 percentile)
+  const sample = [];
+  const stride = Math.max(1, Math.floor(sel.length * N / 200000));
+  for (const [, i] of sel) for (let p = 0; p < N; p += stride) { const v = data[i * N + p]; if (v === v) sample.push(v); }
+  sample.sort((a, b) => a - b);
+  const vmin = sample.length ? sample[Math.floor(sample.length * 0.02)] : -1;
+  const vmax = sample.length ? sample[Math.min(sample.length - 1, Math.floor(sample.length * 0.98))] : 1;
+  host.innerHTML = '';
+  const grid = document.createElement('div'); grid.className = 'facets';
+  for (const [t, i] of sel) {
+    const f = document.createElement('div'); f.className = 'facet';
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d'), img = ctx.createImageData(W, H);
+    let valid = 0;
+    for (let p = 0; p < N; p++) {
+      const v = data[i * N + p], o = p * 4;
+      if (v === v) { const [r, g, b] = cmap((v - vmin) / (vmax - vmin || 1)); img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255; valid++; }
+    }
+    ctx.putImageData(img, 0, 0);
+    const lab = document.createElement('span');
+    lab.textContent = fmtDate(t) + (valid ? '' : ' · vacía');
+    lab.title = `Semana que termina el ${fmtDate(t)} · ${Math.round(valid / N * 100)} % de píxeles con dato`;
+    f.append(c, lab); grid.append(f);
+  }
+  host.append(grid);
+  if (capped) host.insertAdjacentHTML('beforeend', '<p class="hint">Se muestran las primeras 70 semanas del rango.</p>');
+  // colorbar
+  const cb = document.createElement('canvas'); cb.width = 200; cb.height = 1;
+  const cx = cb.getContext('2d'), im = cx.createImageData(200, 1);
+  for (let k = 0; k < 200; k++) { const [r, g, b] = cmap(k / 199); im.data.set([r, g, b, 255], k * 4); }
+  cx.putImageData(im, 0, 0);
+  const bar = $('cbar'); bar.innerHTML = '';
+  bar.append(Object.assign(document.createElement('span'), { textContent: vmin.toFixed(2) }), cb, Object.assign(document.createElement('span'), { textContent: vmax.toFixed(2) + ' NDVI' }));
+}
+
+// start with the notebook's own parameters
+if (window.GeoTIFF && window.proj4) run();
+else status('No cargaron las librerías geotiff/proj4. Recarga la página.', true);
+})();
+</script>
+</body></html>

@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planos hídricos Kennedy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --sunk:#E7ECE6; --ink:#17201B; --muted:#58645C; --line:#D4DBD3;
+  --accent:#1F5E7A; --accent-ink:#FFFFFF; --ok:#2E7D4F; --warn:#9A6A12;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101513; --surface:#171E1A; --sunk:#1F2822; --ink:#E1E8E3; --muted:#97A39A; --line:#2A352E;
+    --accent:#6FB6D6; --accent-ink:#0B1A21; --ok:#6CC08F; --warn:#E0B055;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101513; --surface:#171E1A; --sunk:#1F2822; --ink:#E1E8E3; --muted:#97A39A; --line:#2A352E;
+  --accent:#6FB6D6; --accent-ink:#0B1A21; --ok:#6CC08F; --warn:#E0B055;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:24px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:6px}
+h1{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--cond);font-weight:600;font-size:18px;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:75ch;margin:0}
+a{color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:flex;flex-direction:column;gap:5px}
+label,.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+select,input[type="number"]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px}
+button,.btn{font:inherit;font-weight:600;font-size:13px;border-radius:5px;padding:7px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.ghost,.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 9px;border-radius:99px;background:var(--sunk)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.pill.warn i{background:var(--warn)}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.cover{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.cover a{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);font-size:12.5px;background:var(--bg);min-width:0}
+.cover a span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cover a b{font-family:var(--mono);font-weight:500;font-size:11px;color:var(--muted)}
+.sw{width:22px;height:10px;border-radius:2px;flex:none}
+.cover a.empty{opacity:.55}
+.cards{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;scroll-margin-top:12px}
+.card canvas{display:block;width:100%;height:auto;background:#f7f7f4}
+.card .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--line)}
+.card .bar .left{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+.card .bar .t{font-weight:600}
+.card .bar .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.hint{font-size:12.5px;color:var(--muted);margin:0;max-width:80ch}
+.sources{font-size:12.5px;color:var(--muted);margin:0;padding-left:18px}
+.sources li{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Planos hídricos · Kennedy</h1>
+    <p class="lede">Veinte planos temáticos de calidad y cantidad de agua para los humedales La Vaca, El Burro y Techo, dentro del perímetro de estudio de la localidad de Kennedy (Bogotá). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
+    <p class="lede"><a href="ndvi.html">Herramienta NDVI Sentinel-2 con filtro Savitzky-Golay →</a></p>
+  </header>
+
+  <section class="panel">
+    <div class="ctl" style="justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <span class="pill" id="datapill"><i></i><span id="datalabel">Cargando datos…</span></span>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="ctl">
+        <button type="button" id="zipall" disabled>Descargar los 20 (ZIP)</button>
+        <label class="btn ghost" for="csvfile">Cargar CSV propio</label>
+        <input type="file" id="csvfile" accept=".csv,text/csv" hidden>
+        <label class="btn ghost" for="kmlfile">Cambiar perímetro (KML)</label>
+        <input type="file" id="kmlfile" accept=".kml,.geojson,.json" hidden>
+        <a class="btn ghost" href="data/muestreo_real.csv" download>Descargar datos CSV</a>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="field"><label for="base">Mapa base</label>
+        <select id="base"><option value="carto">Gris claro (Esri)</option><option value="osm">Calles (OpenStreetMap)</option><option value="sat">Satélite (Esri)</option><option value="none">Sin mapa base</option></select></div>
+      <div class="field"><label for="pw">Interpolación IDW · potencia</label>
+        <select id="pw"><option>1</option><option selected>2</option><option>3</option></select></div>
+      <div class="field"><label for="res">Resolución PNG</label>
+        <select id="res"><option value="1.5">2250 × 1500 px</option><option value="2" selected>3000 × 2000 px</option><option value="3">4500 × 3000 px</option></select></div>
+      <label class="check"><input type="checkbox" id="labels" checked> Mostrar valores en los puntos</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ctl" style="justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0;max-width:70ch">
+        <h2>Copernicus Sentinel-2</h2>
+        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 20 m. Calcula el MNDWI (humedad superficial y agua abierta, MNDWI &gt; 0), el NDCI (clorofila, proxy de eutrofización) y el NDTI (turbiedad y sedimentos relativos) dentro de cada humedal. En estos humedales la lámina de agua está casi toda cubierta de vegetación, así que los índices describen una superficie mixta de agua y vegetación. Se usa en los planos 2, 9, 10 y 16 con el selector «Fuente».</p>
+        <span class="status" id="satstatus">Esperando…</span>
+      </div>
+      <div class="ctl">
+        <div class="field"><label for="sd0">Desde</label><input type="date" id="sd0" value="2025-09-27"></div>
+        <div class="field"><label for="sd1">Hasta</label><input type="date" id="sd1" value="2026-09-27"></div>
+        <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
+        <button type="button" id="satrun">Recalcular</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="cover" id="cover" aria-label="Índice de planos"></nav>
+  <div class="cards" id="cards"></div>
+
+  <section class="panel">
+    <h2>Fuentes</h2>
+    <ul class="sources" id="fuentes"></ul>
+    <p class="hint">Polígonos de humedales: OpenStreetMap (© colaboradores de OpenStreetMap, ODbL). Perímetro: perimetro_kennedy_polygon2.kml. Los valores por punto vienen de <code>data/muestreo_real.csv</code>; cada fila indica su fuente y la tabla o página del documento. Las celdas vacías significan que la fuente no reporta esa variable, y el plano lo muestra como «sin dato».</p>
+    <p class="hint">Interpolación: distancia inversa ponderada (IDW) entre los puntos de cada humedal, recortada al polígono del humedal. Plano 18: densidad de kernel gaussiano (radio 250 m) en puntos/km². Plano 16: valor por humedal.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.15.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script src="data.js"></script>
+<script>
+(() => {
+// ---------------- definitions ----------------
+const V = [
+  {n:1, t:'pH del agua', v:'pH por punto de muestreo', u:'unidades de pH', col:'ph', dec:2,
+   d:'Permite localizar zonas con cambios en acidez/alcalinidad y comparar puntos dentro de cada humedal.',
+   ramp:['#fde0ef','#f768a1','#ae017e','#49006a']},
+  {n:2, t:'Eutrofización', v:'DBO5 + DQO + N + P', u:'mg/L', dec:1, calc:r=>sum([r.dbo5,r.dqo,r.ntk,r.p_total]),
+   d:'Identifica zonas con alta carga orgánica y nutrientes asociados a procesos eutróficos (suma de DBO5, DQO, NTK y fósforo total).',
+   ramp:['#ffffcc','#addd8e','#41ab5d','#004529']},
+  {n:3, t:'Oxígeno disuelto', v:'OD', u:'mg/L', col:'od', dec:2,
+   d:'Muestra dónde el agua tiene menor disponibilidad de oxígeno para organismos acuáticos; contrástalo con DBO/DQO.',
+   ramp:['#eff3ff','#6baed6','#2171b5','#08306b']},
+  {n:4, t:'Fósforo total', v:'P total', u:'mg/L', col:'p_total', dec:2,
+   d:'Variable directa para estudiar enriquecimiento de nutrientes y procesos de eutrofización.',
+   ramp:['#fff5eb','#fdae6b','#e6550d','#7f2704']},
+  {n:5, t:'Nitrógeno total y amoniacal', v:'NTK / NH₄', u:'mg/L', col:'ntk', dec:1, alt:{label:'Variable', opts:[['ntk','NTK (N total Kjeldahl)'],['nh4','NH₄ (N amoniacal)']]},
+   d:'Localiza entradas recientes o persistentes de materia nitrogenada y permite relacionarlas con vertimientos.',
+   ramp:['#fcfbfd','#bcbddc','#756bb1','#3f007d']},
+  {n:6, t:'DQO', v:'Demanda Química de Oxígeno', u:'mg/L', col:'dqo', dec:0,
+   d:'Carga oxidable total del agua.',
+   ramp:['#fff5f0','#fb6a4a','#cb181d','#67000d']},
+  {n:7, t:'DBO5', v:'Demanda Bioquímica de Oxígeno', u:'mg/L', col:'dbo5', dec:0,
+   d:'Cuantifica la carga orgánica biodegradable. Compárala con la DQO para ver qué tipo de contaminación domina.',
+   ramp:['#fcf8e3','#e8c547','#a07c00','#3d2f00']},
+  {n:8, t:'Relación DBO/DQO', v:'DBO ÷ DQO', u:'adimensional', dec:2, calc:r=>(isNum(r.dbo5)&&isNum(r.dqo)&&r.dqo>0)?r.dbo5/r.dqo:NaN,
+   d:'Caracteriza la biodegradabilidad de la carga orgánica.',
+   ramp:['#f6eff7','#67a9cf','#02818a','#014636']},
+  {n:9, t:'Turbiedad', v:'NTU/UNT', u:'UNT', col:'turbiedad', dec:1,
+   d:'Detecta material suspendido y entradas por escorrentía.',
+   ramp:['#f6efe6','#d2a679','#8c5a2b','#3b2410']},
+  {n:10, t:'Sólidos suspendidos totales', v:'SST', u:'mg/L', col:'sst', dec:0,
+   d:'Indica carga particulada y sedimentaria; útil para relacionar escorrentía urbana con calidad hídrica.',
+   ramp:['#f7f7f7','#bdbdbd','#636363','#1f1f1f']},
+  {n:11, t:'Conductividad eléctrica', v:'conductividad', u:'µS/cm', col:'conductividad', dec:0,
+   d:'Muestra cambios en la concentración de sales y aportes externos.',
+   ramp:['#f7fcf0','#7bccc4','#2b8cbe','#084081']},
+  {n:12, t:'Grasas y aceites', v:'concentración', u:'mg/L', col:'grasas_aceites', dec:1,
+   d:'Externalidad concreta cerca de Corabastos: permite estudiar una fuente más específica que «agua sucia».',
+   ramp:['#fee838','#a59c74','#575d6d','#00224e']},
+  {n:13, t:'Coliformes fecales', v:'NMP/100 ml', u:'NMP/100 ml', col:'coliformes_fecales', dec:0, log:true,
+   d:'Detecta contaminación microbiológica y posibles aportes sanitarios. Escala logarítmica.',
+   ramp:['#fcfdbf','#fc8961','#b73779','#51127c','#000004']},
+  {n:14, t:'Coliformes totales', v:'NMP/100 ml', u:'NMP/100 ml', col:'coliformes_totales', dec:0, log:true,
+   d:'Complementa el anterior y permite mapear presión sanitaria. Escala logarítmica.',
+   ramp:['#f0f921','#f89540','#cc4778','#7e03a8','#0d0887']},
+  {n:15, t:'Profundidad de lámina de agua', v:'profundidad', u:'m', col:'profundidad', dec:2,
+   d:'Relaciona hidrología con hábitat, concentración de contaminantes y estacionalidad.',
+   ramp:['#ffffd9','#7fcdbb','#1d91c0','#081d58']},
+  {n:16, t:'Área inundada', v:'superficie de agua', u:'ha', col:'area_inundada', dec:2, mode:'polygon',
+   d:'Variación seca/lluvias y capacidad de almacenamiento hídrico. Se colorea el humedal completo con su valor.',
+   ramp:['#fde725','#5ec962','#21918c','#3b528b','#440154']},
+  {n:17, t:'Nivel freático', v:'profundidad del nivel freático', u:'m', col:'nivel_freatico', dec:2,
+   d:'Ayuda a explicar conexiones entre suelo saturado, humedal y urbanización.',
+   ramp:['#f7fcfd','#9ebcda','#8c6bb1','#4d004b']},
+  {n:18, t:'Conexiones erradas / vertimientos', v:'número de conexiones o puntos', u:'puntos/km²', col:'conexiones', dec:1, mode:'density',
+   d:'Espacializa las posibles fuentes, no solo los efectos. Densidad de kernel sobre todo el perímetro.',
+   ramp:['#fef3c7','#f59e0b','#b91c1c','#1c1917']},
+  {n:19, t:'Caudal de entrada', v:'caudal', u:'L/s', col:'caudal', dec:1,
+   d:'Relaciona entradas hídricas con dilución o concentración de contaminantes.',
+   ramp:['#e0f7fa','#4dd0e1','#00838f','#002b2e']},
+  {n:20, t:'Carga contaminante', v:'concentración × caudal', u:'kg/día', dec:1, alt:{label:'Concentración', opts:[['dbo5','DBO5'],['dqo','DQO'],['sst','SST'],['p_total','P total'],['ntk','NTK'],['grasas_aceites','Grasas y aceites']]},
+   calcAlt:(r,c)=>(isNum(r[c])&&isNum(r.caudal))?r[c]*r.caudal*0.0864:NaN,
+   d:'Muestra cuánto contaminante entra realmente al sistema: concentración (mg/L) × caudal (L/s) × 0,0864.',
+   ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']}
+];
+const GROUPS = { 'La Vaca Norte':'La Vaca', 'La Vaca Sur':'La Vaca', 'El Burro':'El Burro', 'Techo':'Techo' };
+const NUMCOLS = ['lat','lon','ph','od','p_total','ntk','nh4','dqo','dbo5','turbiedad','sst','conductividad','grasas_aceites','coliformes_fecales','coliformes_totales','profundidad','area_inundada','nivel_freatico','conexiones','caudal'];
+
+function isNum(x){ return typeof x === 'number' && isFinite(x); }
+function sum(a){ return a.every(isNum) ? a.reduce((s,x)=>s+x,0) : NaN; }
+const $ = id => document.getElementById(id);
+
+// ---------------- state ----------------
+const S = {
+  rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
+  perim: window.PERIMETRO, hum: window.HUMEDALES,
+  base: 'carto', pw: 2, labels: true, alt: {5:'ntk', 20:'dbo5'}, src: {2:'campo', 9:'campo', 10:'campo', 16:'sat'}
+};
+
+// ---------------- CSV ----------------
+function parseCSV(text){
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0];
+  const delim = (first.split(';').length > first.split(',').length) ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === delim){ row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r'){ if (c === '\r' && text[i+1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell || row.length){ row.push(cell); rows.push(row); }
+  const head = rows.shift().map(h => h.trim().toLowerCase());
+  return rows.filter(r => r.some(c => c.trim())).map(r => {
+    const o = {};
+    head.forEach((h, i) => {
+      let v = (r[i] ?? '').trim();
+      if (NUMCOLS.includes(h)){ v = v.replace(/\s/g,''); if (delim === ';') v = v.replace(',', '.'); o[h] = v === '' ? NaN : +v; }
+      else o[h] = v;
+    });
+    return o;
+  }).filter(o => isNum(o.lat) && isNum(o.lon));
+}
+function parseKML(text){
+  if (text.trim().startsWith('{')){
+    const g = JSON.parse(text); const f = g.type === 'FeatureCollection' ? g.features[0] : g;
+    const geom = f.geometry || f; const c = geom.type === 'Polygon' ? geom.coordinates[0] : geom.coordinates[0][0];
+    return c.map(p => [p[0], p[1]]);
+  }
+  const m = text.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
+  if (!m) throw new Error('El archivo no tiene un polígono con <coordinates>.');
+  return m[1].trim().split(/\s+/).map(s => s.split(',').map(Number)).map(p => [p[0], p[1]]);
+}
+
+// ---------------- geometry ----------------
+const TILE = 256;
+const mx = (lon, z) => (lon + 180) / 360 * TILE * 2 ** z;
+const my = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * TILE * 2 ** z; };
+const rings = g => g.type === 'Polygon' ? [g.coordinates[0]] : g.coordinates.map(p => p[0]);
+function pip(x, y, r){ let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++){ const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+function featureOf(row){
+  for (const f of S.hum.features) if (rings(f.geometry).some(r => pip(row.lon, row.lat, r))) return f.properties.humedal;
+  const h = (row.humedal || '').toLowerCase();
+  if (h.includes('vaca')) return h.includes('sur') ? 'La Vaca Sur' : 'La Vaca Norte';
+  if (h.includes('burro')) return 'El Burro';
+  if (h.includes('techo')) return 'Techo';
+  // nearest feature
+  let best = null, bd = Infinity;
+  for (const f of S.hum.features){ for (const r of rings(f.geometry)) for (const p of r){ const d = (p[0]-row.lon)**2 + (p[1]-row.lat)**2; if (d < bd){ bd = d; best = f.properties.humedal; } } }
+  return best;
+}
+
+// ---------------- color ----------------
+const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+function rampFn(stops){
+  const c = stops.map(hex);
+  return u => { u = Math.max(0, Math.min(1, u)) * (c.length - 1); const i = Math.min(c.length - 2, Math.floor(u)), f = u - i; return [0,1,2].map(k => Math.round(c[i][k] + (c[i+1][k] - c[i][k]) * f)); };
+}
+const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;
+
+// ---------------- values ----------------
+function valueOf(def, r){
+  if (def.calcAlt) return def.calcAlt(r, S.alt[def.n]);
+  if (def.calc) return def.calc(r);
+  const col = def.alt ? S.alt[def.n] : def.col;
+  return r[col];
+}
+function unitOf(def){ return def.u; }
+function subOf(def){
+  if (def.n === 5) return S.alt[5] === 'nh4' ? 'NH₄ · nitrógeno amoniacal' : 'NTK · nitrógeno total Kjeldahl';
+  if (def.n === 20){ const o = def.alt.opts.find(o => o[0] === S.alt[20]); return `${o[1]} × caudal`; }
+  return def.v;
+}
+function fmt(v, dec){
+  if (!isNum(v)) return '–';
+  if (Math.abs(v) >= 1e5) return v.toExponential(1).replace('e+', '×10^');
+  return v.toLocaleString('es-CO', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+// ---------------- tiles ----------------
+const BASES = {
+  carto: { url: (z,x,y) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${z}/${y}/${x}`, attr: 'Mapa base: Esri, HERE, Garmin, © OpenStreetMap', max: 16 },
+  osm: { url: (z,x,y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`, attr: 'Mapa base © colaboradores de OpenStreetMap', max: 19 },
+  sat: { url: (z,x,y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`, attr: 'Imagen: Esri, Maxar, Earthstar Geographics', max: 19 },
+  none: null
+};
+const tileCache = new Map();
+function tile(url){
+  if (!tileCache.has(url)) tileCache.set(url, new Promise(res => {
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => res(im); im.onerror = () => res(null); im.src = url;
+  }));
+  return tileCache.get(url);
+}
+
+// ---------------- render ----------------
+// logical layout 1500 x 1000: map 1000x1000 on the left, sheet panel 500 wide on the right
+const LW = 1500, LH = 1000, MW = 1000;
+async function render(canvas, def, k){
+  canvas.width = Math.round(LW * k); canvas.height = Math.round(LH * k);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.fillStyle = '#F7F7F4'; ctx.fillRect(0, 0, LW, LH);
+
+  // --- view
+  const P = S.perim;
+  const lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+  const b = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+  const pad = 40, z0 = 0;
+  const wx = mx(b[2], z0) - mx(b[0], z0), wy = my(b[1], z0) - my(b[3], z0);
+  const zf = Math.log2(Math.min((MW - 2 * pad) / wx, (LH - 2 * pad) / wy));
+  const cx = (mx(b[0], zf) + mx(b[2], zf)) / 2, cy = (my(b[1], zf) + my(b[3], zf)) / 2;
+  const X = lon => mx(lon, zf) - cx + MW / 2, Y = lat => my(lat, zf) - cy + LH / 2;
+  const latC = (b[1] + b[3]) / 2;
+  const mpp = 156543.03392 * Math.cos(latC * Math.PI / 180) / 2 ** zf; // meters per logical px
+
+  // --- basemap
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.clip();
+  const B = BASES[S.base];
+  if (B){
+    const zt = Math.min(B.max, Math.ceil(zf + Math.log2(k)));
+    const sc = 2 ** (zf - zt);
+    const x0 = Math.floor((cx - MW / 2) / sc / TILE), x1 = Math.floor((cx + MW / 2) / sc / TILE);
+    const y0 = Math.floor((cy - LH / 2) / sc / TILE), y1 = Math.floor((cy + LH / 2) / sc / TILE);
+    const jobs = [];
+    for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) jobs.push(tile(B.url(zt, tx, ty)).then(im => ({ im, tx, ty })));
+    const got = await Promise.all(jobs);
+    for (const { im, tx, ty } of got) if (im) ctx.drawImage(im, tx * TILE * sc - cx + MW / 2, ty * TILE * sc - cy + LH / 2, TILE * sc + 0.5, TILE * sc + 0.5);
+    if (S.base !== 'sat'){ ctx.fillStyle = 'rgba(247,247,244,0.25)'; ctx.fillRect(0, 0, MW, LH); }
+  }
+  // mask outside perimeter
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH);
+  P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(236,238,233,0.82)'; ctx.fill('evenodd');
+
+  const finish = () => {
+    northArrow(ctx, MW - 52, 60);
+    scaleBar(ctx, 34, LH - 44, mpp);
+    ctx.fillStyle = '#4a5550'; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - 10, LH - 10);
+  };
+
+  // --- satellite mode
+  if (useSat(def)){
+    const D = drawSat(ctx, def, { X, Y, zf, cx, cy, P });
+    ctx.restore(); finish(); sheet(ctx, def, D); return;
+  }
+
+  // --- data
+  const ramp = rampFn(def.ramp);
+  const pts = S.rows.map(r => ({ r, v: valueOf(def, r), f: featureOf(r) })).filter(p => isNum(p.v));
+  pts.forEach(p => { p.x = X(p.r.lon); p.y = Y(p.r.lat); });
+  let lo = Infinity, hi = -Infinity;
+  const tr = v => def.log ? Math.log10(Math.max(v, 1e-9)) : v;
+  const inv = t => def.log ? 10 ** t : t;
+
+  const pathOf = f => { const p = new Path2D(); for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(X(c[0]), Y(c[1])) : p.moveTo(X(c[0]), Y(c[1]))); p.closePath(); } return p; };
+  const hatch = (() => { const c = document.createElement('canvas'); c.width = c.height = 8; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, 8); g.lineTo(8, 0); g.stroke(); return ctx.createPattern(c, 'repeat'); })();
+
+  let grid = null; // for density
+  if (def.mode === 'density'){
+    // kernel density in points/km² over the perimeter
+    const h = 250 / mpp, step = 4;
+    grid = { step, w: Math.ceil(MW / step), hgt: Math.ceil(LH / step) };
+    grid.v = new Float32Array(grid.w * grid.hgt);
+    const norm = 1e6 / (2 * Math.PI * 250 * 250);
+    for (let gy = 0; gy < grid.hgt; gy++) for (let gx = 0; gx < grid.w; gx++){
+      const x = gx * step + step / 2, y = gy * step + step / 2; let s = 0;
+      for (const p of pts){ const d2 = ((x - p.x) ** 2 + (y - p.y) ** 2) / (h * h); if (d2 < 16) s += p.v * Math.exp(-d2 / 2); }
+      grid.v[gy * grid.w + gx] = s * norm;
+    }
+    lo = 0; hi = Math.max(1e-9, ...grid.v);
+  } else if (pts.length){
+    for (const p of pts){ lo = Math.min(lo, tr(p.v)); hi = Math.max(hi, tr(p.v)); }
+    if (hi === lo){ hi += 0.5; lo -= 0.5; }
+  }
+  const col = v => ramp((v - lo) / (hi - lo));
+
+  if (def.mode === 'density' && pts.length){
+    const off = document.createElement('canvas'); off.width = grid.w; off.height = grid.hgt;
+    const oc = off.getContext('2d'), im = oc.createImageData(grid.w, grid.hgt);
+    for (let i = 0; i < grid.v.length; i++){ const v = grid.v[i], u = v / hi; if (u < 0.02) continue; const c = col(v); im.data.set([c[0], c[1], c[2], Math.round(60 + 170 * Math.min(1, u * 1.4))], i * 4); }
+    oc.putImageData(im, 0, 0);
+    ctx.save(); ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath(); ctx.clip();
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, MW, LH); ctx.restore();
+  }
+
+  for (const f of S.hum.features){
+    const name = f.properties.humedal, path = pathOf(f);
+    const fp = pts.filter(p => p.f === name);
+    const gp = fp.length ? fp : pts.filter(p => GROUPS[p.f] === GROUPS[name]);
+    if (def.mode === 'density'){ ctx.fillStyle = 'rgba(40,110,150,.18)'; ctx.fill(path); }
+    else if (!gp.length){ ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill(path); ctx.fillStyle = hatch; ctx.fill(path); }
+    else if (def.mode === 'polygon'){
+      const m = gp.reduce((s, p) => s + tr(p.v), 0) / gp.length;
+      ctx.fillStyle = rgb(col(m)); ctx.fill(path);
+    } else {
+      // IDW raster clipped to polygon
+      const bb = rings(f.geometry).flat(); const px = bb.map(c => X(c[0])), py = bb.map(c => Y(c[1]));
+      const bx0 = Math.floor(Math.min(...px)), by0 = Math.floor(Math.min(...py)), bw = Math.ceil(Math.max(...px)) - bx0 + 1, bh = Math.ceil(Math.max(...py)) - by0 + 1;
+      const res = Math.max(1, 1 / k);
+      const gw = Math.ceil(bw / res), gh = Math.ceil(bh / res);
+      const off = document.createElement('canvas'); off.width = gw; off.height = gh;
+      const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
+      for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++){
+        const x = bx0 + (i + .5) * res, y = by0 + (j + .5) * res;
+        let sw = 0, sv = 0, exact = null;
+        for (const p of gp){ const d = Math.hypot(x - p.x, y - p.y); if (d < 0.5){ exact = tr(p.v); break; } const w = 1 / d ** S.pw; sw += w; sv += w * tr(p.v); }
+        const c = col(exact ?? sv / sw);
+        im.data.set([c[0], c[1], c[2], 255], (j * gw + i) * 4);
+      }
+      oc.putImageData(im, 0, 0);
+      ctx.save(); ctx.clip(path); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, bx0, by0, gw * res, gh * res); ctx.restore();
+    }
+    ctx.lineWidth = 1.6; ctx.strokeStyle = '#1b2a33'; ctx.stroke(path);
+  }
+
+  // perimeter line
+  ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath();
+  ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]);
+
+  // wetland names
+  ctx.textAlign = 'center';
+  const named = {};
+  for (const f of S.hum.features){ const g = GROUPS[f.properties.humedal]; (named[g] ||= []).push(...rings(f.geometry).flat()); }
+  for (const [g, cs] of Object.entries(named)){
+    const x = (Math.min(...cs.map(c => X(c[0]))) + Math.max(...cs.map(c => X(c[0])))) / 2;
+    const y = Math.min(...cs.map(c => Y(c[1]))) - 12;
+    haloText(ctx, 'Humedal ' + g, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
+  }
+
+  // points
+  for (const p of (def.mode === 'density' ? S.rows.map(r => ({ r, x: X(r.lon), y: Y(r.lat), v: r.conexiones })) : pts)){
+    const rad = def.mode === 'density' ? 3 + 2.2 * Math.sqrt(isNum(p.v) ? p.v : 0) : 5;
+    ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = def.mode === 'density' ? (isNum(p.v) && p.v > 0 ? '#1c1917' : '#ffffff') : rgb(col(tr(p.v)));
+    ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffffff'; ctx.stroke(); ctx.lineWidth = .8; ctx.strokeStyle = '#1b2a33'; ctx.stroke();
+    if (S.labels && isNum(p.v)){
+      ctx.textAlign = 'left';
+      haloText(ctx, fmt(p.v, def.mode === 'density' ? 0 : def.dec), p.x + rad + 4, p.y + 4, '500 12.5px "IBM Plex Mono", monospace', '#111');
+    }
+  }
+  ctx.restore();
+  finish();
+
+  // --- sheet panel
+  const srcIds = [...new Set(pts.map(p => p.r.fuente).filter(Boolean))];
+  sheet(ctx, def, {
+    lo, hi, inv, ramp, has: pts.length > 0,
+    sub: subOf(def), unit: unitOf(def), log: def.log, dec: def.mode === 'density' ? 1 : def.dec,
+    symbol: def.mode === 'density' ? 'Punto de conexión errada (tamaño = número)' : 'Punto de muestreo',
+    stats: ['La Vaca', 'El Burro', 'Techo'].map(g => { const vs = pts.filter(p => GROUPS[p.f] === g).map(p => p.v); return [g, vs.length ? `n=${vs.length}  ${fmt(Math.min(...vs), def.dec)} – ${fmt(Math.max(...vs), def.dec)}` : 'sin dato']; }),
+    srcTxt: srcIds.length ? srcIds.map(id => (S.fuentes.find(f => f.id === id) || {}).corto || id).join('; ') : 'Sin datos para esta variable en las fuentes revisadas',
+    method: def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : def.mode === 'polygon' ? 'Valor por humedal' : 'IDW potencia ' + S.pw
+  });
+}
+
+// ---------------- Sentinel-2 ----------------
+const SATDEF = {
+  2:  { idx: 'ndci',  sub: 'NDCI · índice de clorofila (proxy de eutrofización)', unit: 'índice NDCI' },
+  9:  { idx: 'ndti',  sub: 'NDTI · índice de turbiedad (proxy)', unit: 'índice NDTI' },
+  10: { idx: 'ndti',  sub: 'NDTI · sedimentos en suspensión (proxy)', unit: 'índice NDTI' },
+  16: { idx: 'mndwi', sub: 'MNDWI · humedad superficial; agua abierta si MNDWI > 0', unit: 'índice MNDWI', area: true }
+};
+const SAT = { ready: false };
+function useSat(def){ return SATDEF[def.n] && S.src[def.n] === 'sat' && SAT.ready; }
+function utmDef(epsg){ const s = epsg > 32700; return `+proj=utm +zone=${s ? epsg - 32700 : epsg - 32600}${s ? ' +south' : ''} +datum=WGS84 +units=m +no_defs`; }
+const itemEpsg = it => +(it.properties['proj:epsg'] || String(it.properties['proj:code'] || '').split(':')[1]);
+async function runSentinel(){
+  const st = $('satstatus'), btn = $('satrun');
+  btn.disabled = true; SAT.ready = false;
+  try {
+    const P = S.perim, lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+    const bbox = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+    const d0 = $('sd0').value, d1 = $('sd1').value, nmax = +$('sn').value;
+    st.textContent = 'Buscando escenas Sentinel-2…';
+    let body = { collections: ['sentinel-2-c1-l2a'], bbox, datetime: `${d0}T00:00:00Z/${d1}T23:59:59Z`, limit: 100 }, url = 'https://earth-search.aws.element84.com/v1/search', feats = [];
+    for (let i = 0; i < 20; i++){
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error('Earth Search respondió ' + r.status);
+      const j = await r.json(); feats.push(...j.features);
+      const nx = (j.links || []).find(l => l.rel === 'next'); if (!nx || !j.features.length) break;
+      url = nx.href; body = nx.body || body;
+    }
+    // one item per date, least cloudy first
+    const byDate = {};
+    for (const f of feats){ const d = f.properties.datetime.slice(0, 10); if (!byDate[d] || f.properties['eo:cloud_cover'] < byDate[d].properties['eo:cloud_cover']) byDate[d] = f; }
+    const items = Object.values(byDate).filter(f => f.properties['eo:cloud_cover'] < 60).sort((a, b) => a.properties['eo:cloud_cover'] - b.properties['eo:cloud_cover']).slice(0, nmax);
+    if (!items.length) throw new Error('No hay escenas con menos de 60 % de nubes en ese periodo.');
+    const epsg = itemEpsg(items[0]), def = utmDef(epsg);
+    const corners = []; for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) corners.push(proj4('EPSG:4326', def, [bbox[0] + (bbox[2] - bbox[0]) * i / 4, bbox[1] + (bbox[3] - bbox[1]) * j / 4]));
+    const res = 20;
+    const ub = [Math.floor(Math.min(...corners.map(c => c[0])) / res) * res, Math.floor(Math.min(...corners.map(c => c[1])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[0])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[1])) / res) * res];
+    const W = (ub[2] - ub[0]) / res, H = (ub[3] - ub[1]) / res, N = W * H;
+    const stacks = { mndwi: [], ndti: [], ndci: [] };
+    let done = 0;
+    const read = async (a, box) => (await (await GeoTIFF.fromUrl(a.href)).readRasters({ bbox: box, width: W, height: H, fillValue: 0, interleave: true }));
+    const sc = a => { const b = (a['raster:bands'] || [{}])[0]; return [b.scale ?? 1, b.offset ?? 0]; };
+    const queue = items.slice();
+    await Promise.all(Array.from({ length: 4 }, async () => {
+      while (queue.length){
+        const it = queue.shift();
+        const e = itemEpsg(it), box = e === epsg ? ub : (() => { const d2 = utmDef(e); const cs = corners.map(c => proj4(def, d2, c)); return [Math.min(...cs.map(c => c[0])), Math.min(...cs.map(c => c[1])), Math.max(...cs.map(c => c[0])), Math.max(...cs.map(c => c[1]))]; })();
+        try {
+          const [g, r, re, sw, scl] = await Promise.all(['green', 'red', 'rededge1', 'swir16', 'scl'].map(k => read(it.assets[k], box)));
+          const [gs, go] = sc(it.assets.green), [rs, ro] = sc(it.assets.red), [es, eo] = sc(it.assets.rededge1), [ss, so] = sc(it.assets.swir16);
+          const m = new Float32Array(N), t = new Float32Array(N), c = new Float32Array(N);
+          for (let p = 0; p < N; p++){
+            const q = scl[p];
+            if (!g[p] || !r[p] || !sw[p] || q === 0 || q === 1 || q === 3 || q === 8 || q === 9 || q === 10){ m[p] = t[p] = c[p] = NaN; continue; }
+            const G = g[p] * gs + go, R = r[p] * rs + ro, E = re[p] * es + eo, SW = sw[p] * ss + so;
+            m[p] = (G - SW) / (G + SW); t[p] = (R - G) / (R + G); c[p] = (E - R) / (E + R);
+          }
+          stacks.mndwi.push(m); stacks.ndti.push(t); stacks.ndci.push(c);
+        } catch (err){ console.warn(it.id, err); }
+        done++; st.textContent = `Leyendo Sentinel-2… ${done}/${items.length}`;
+      }
+    }));
+    if (!stacks.mndwi.length) throw new Error('No se pudo leer ninguna escena Sentinel-2.');
+    st.textContent = 'Calculando mediana…'; await new Promise(r => setTimeout(r, 0));
+    const med = arrs => { const out = new Float32Array(N), buf = new Float32Array(arrs.length); for (let p = 0; p < N; p++){ let k = 0; for (const a of arrs){ const v = a[p]; if (v === v) buf[k++] = v; } if (!k){ out[p] = NaN; continue; } const s = buf.subarray(0, k).sort(); out[p] = k % 2 ? s[k >> 1] : (s[k / 2 - 1] + s[k / 2]) / 2; } return out; };
+    SAT.mndwi = med(stacks.mndwi); SAT.ndti = med(stacks.ndti); SAT.ndci = med(stacks.ndci);
+    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.mndwi.length });
+    const dates = items.map(i => i.properties.datetime.slice(0, 10)).sort();
+    SAT.dates = [dates[0], dates[dates.length - 1]];
+    // water area per wetland feature
+    SAT.area = {}; SAT.cellFeat = new Int8Array(N).fill(-1);
+    const feats2 = S.hum.features, inv = proj4(def, 'EPSG:4326');
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++){
+      const ll = inv.forward([ub[0] + (i + .5) * res, ub[3] - (j + .5) * res]);
+      for (let f = 0; f < feats2.length; f++) if (rings(feats2[f].geometry).some(r => pip(ll[0], ll[1], r))){ SAT.cellFeat[j * W + i] = f; break; }
+    }
+    for (let f = 0; f < feats2.length; f++){ let n = 0; for (let p = 0; p < N; p++) if (SAT.cellFeat[p] === f && SAT.mndwi[p] > 0) n++; SAT.area[feats2[f].properties.humedal] = n * res * res / 1e4; }
+    SAT.ready = true;
+    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana a 20 m · EPSG:${epsg}`;
+    for (const n of Object.keys(SATDEF)) await draw(V[n - 1]);
+  } catch (e){ st.textContent = e.message; console.error(e); }
+  btn.disabled = false;
+}
+function drawSat(ctx, def, g){
+  const sd = SATDEF[def.n], A = SAT[sd.idx], { W, H, res, ub } = SAT;
+  const ramp = rampFn(def.ramp);
+  const step = 2, ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
+  const Z = TILE * 2 ** g.zf;
+  const vals = new Float32Array(ow * oh).fill(NaN);
+  const conv = proj4('EPSG:4326', SAT.def);
+  for (let j = 0; j < oh; j++){
+    const wy = j * step + step / 2 + g.cy - LH / 2;
+    const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * wy / Z))) * 180 / Math.PI;
+    for (let i = 0; i < ow; i++){
+      const wx = i * step + step / 2 + g.cx - MW / 2;
+      const lon = wx / Z * 360 - 180;
+      const e = conv.forward([lon, lat]);
+      const gi = Math.floor((e[0] - ub[0]) / res), gj = Math.floor((ub[3] - e[1]) / res);
+      if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue;
+      const p = gj * W + gi;
+      if (SAT.cellFeat[p] < 0) continue;              // only inside wetlands
+      vals[j * ow + i] = A[p];
+    }
+  }
+  // robust limits
+  const v = []; for (let q = 0; q < vals.length; q++) if (vals[q] === vals[q]) v.push(vals[q]);
+  v.sort((a, b) => a - b);
+  let lo = v.length ? v[Math.floor(v.length * .02)] : 0, hi = v.length ? v[Math.min(v.length - 1, Math.floor(v.length * .98))] : 1;
+  if (hi <= lo) hi = lo + 0.05;
+  const off = document.createElement('canvas'); off.width = ow; off.height = oh;
+  const oc = off.getContext('2d'), im = oc.createImageData(ow, oh);
+  for (let q = 0; q < vals.length; q++){ const x = vals[q]; if (x !== x) continue; const c = ramp((x - lo) / (hi - lo)); im.data.set([c[0], c[1], c[2], 235], q * 4); }
+  oc.putImageData(im, 0, 0);
+  // wetlands backdrop + outline
+  for (const f of S.hum.features){
+    const p = new Path2D(); for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(g.X(c[0]), g.Y(c[1])) : p.moveTo(g.X(c[0]), g.Y(c[1]))); p.closePath(); }
+    ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fill(p);
+    f._p = p;
+  }
+  ctx.save(); ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath(); ctx.clip();
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, ow * step, oh * step); ctx.restore();
+  for (const f of S.hum.features){ ctx.lineWidth = 1.6; ctx.strokeStyle = '#1b2a33'; ctx.stroke(f._p); }
+  ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath();
+  ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]);
+  // names + per-wetland stats
+  const stats = [];
+  for (const grp of ['La Vaca', 'El Burro', 'Techo']){
+    const fs = S.hum.features.map((f, k) => [f, k]).filter(([f]) => GROUPS[f.properties.humedal] === grp);
+    const cs = fs.flatMap(([f]) => rings(f.geometry).flat());
+    const x = (Math.min(...cs.map(c => g.X(c[0]))) + Math.max(...cs.map(c => g.X(c[0])))) / 2, y = Math.min(...cs.map(c => g.Y(c[1]))) - 12;
+    ctx.textAlign = 'center'; haloText(ctx, 'Humedal ' + grp, x, y, '600 17px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
+    const ids = new Set(fs.map(([, k]) => k));
+    let n = 0, s = 0, w = 0;
+    for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p])){ n++; if (SAT.mndwi[p] > 0){ w++; s += SAT[sd.idx][p]; } }
+    const ha = w * res * res / 1e4, tot = n * res * res / 1e4;
+    let s2 = 0, n2 = 0; for (let p = 0; p < SAT.mndwi.length; p++) if (ids.has(SAT.cellFeat[p]) && SAT[sd.idx][p] === SAT[sd.idx][p]){ s2 += SAT[sd.idx][p]; n2++; }
+    const mean = n2 ? s2 / n2 : NaN;
+    let txt = sd.area ? `agua abierta ${fmt(ha, 2)} de ${fmt(tot, 1)} ha` : `media ${fmt(mean, 3)} · ${n2} píx.`;
+    stats.push([grp, txt]);
+    if (S.labels){ ctx.textAlign = 'center'; haloText(ctx, sd.area ? `${fmt(ha, 2)} ha agua` : fmt(mean, 3), x, y + 20, '500 13px "IBM Plex Mono", monospace', '#111'); }
+  }
+  return {
+    lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
+    symbol: 'Píxel Sentinel-2 de 20 m dentro del humedal',
+    stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]}, máscara de nubes SCL`,
+    method: `Índice ${sd.idx.toUpperCase()} · 20 m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · superficie mixta agua-vegetación')
+  };
+}
+
+function haloText(ctx, t, x, y, font, color){
+  ctx.font = font; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+function northArrow(ctx, x, y){
+  ctx.save(); ctx.translate(x, y);
+  ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(8, 10); ctx.lineTo(0, 4); ctx.closePath(); ctx.fillStyle = '#1b2a33'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-8, 10); ctx.lineTo(0, 4); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1b2a33'; ctx.font = '600 12px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('N', 0, 23);
+  ctx.restore();
+}
+function scaleBar(ctx, x, y, mpp){
+  const target = 220 * mpp; const nice = [100, 200, 250, 500, 1000, 2000]; let m = nice[0]; for (const n of nice) if (n <= target) m = n;
+  const L = m / mpp, seg = L / 4;
+  ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fillRect(x - 10, y - 26, L + 60, 40);
+  for (let i = 0; i < 4; i++){ ctx.fillStyle = i % 2 ? '#fff' : '#1b2a33'; ctx.fillRect(x + i * seg, y, seg, 7); }
+  ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x, y, L, 7);
+  ctx.fillStyle = '#1b2a33'; ctx.font = '11px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText('0', x, y - 5); ctx.fillText(m >= 1000 ? (m / 2000) + '' : (m / 2) + '', x + L / 2, y - 5);
+  ctx.textAlign = 'left'; ctx.fillText(m >= 1000 ? (m / 1000) + ' km' : m + ' m', x + L + 6, y + 7);
+}
+function wrap(ctx, text, x, y, maxW, lh, maxLines = 99){
+  const words = text.split(' '); let line = '', n = 0;
+  for (const w of words){
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line){ ctx.fillText(line, x, y); y += lh; line = w; if (++n >= maxLines - 1){ } }
+    else line = t;
+  }
+  if (line){ ctx.fillText(line, x, y); y += lh; }
+  return y;
+}
+function sheet(ctx, def, D){
+  const x0 = MW, w = LW - MW, px = x0 + 36, iw = w - 72;
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x0, 0, w, LH);
+  ctx.fillStyle = '#1b2a33'; ctx.fillRect(x0, 0, 3, LH);
+  ctx.textAlign = 'left';
+  let y = 56;
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 13px "IBM Plex Mono", monospace';
+  ctx.fillText(`PLANO ${String(def.n).padStart(2, '0')} / 20`, px, y); y += 34;
+  ctx.fillStyle = '#17201B'; ctx.font = '700 34px "IBM Plex Sans Condensed", sans-serif';
+  y = wrap(ctx, def.t, px, y, iw, 38);
+  ctx.fillStyle = '#4a5550'; ctx.font = '400 16px "IBM Plex Sans", sans-serif';
+  y = wrap(ctx, `${D.sub} · ${D.unit}`, px, y + 4, iw, 22) + 14;
+
+  // legend ramp
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11.5px "IBM Plex Sans", sans-serif';
+  ctx.fillText(('LEYENDA · ' + D.unit + (D.log ? ' (escala log)' : '')).toUpperCase(), px, y); y += 12;
+  const rw = iw, rh = 16;
+  for (let i = 0; i < rw; i++){ ctx.fillStyle = rgb(D.ramp(i / (rw - 1))); ctx.fillRect(px + i, y, 1.5, rh); }
+  ctx.strokeStyle = '#9aa39d'; ctx.lineWidth = 1; ctx.strokeRect(px, y, rw, rh);
+  const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
+  ctx.fillStyle = '#17201B'; ctx.font = '12px "IBM Plex Mono", monospace';
+  for (let i = 0; i <= 4; i++){
+    const u = i / 4, tx = px + u * rw;
+    ctx.fillStyle = '#9aa39d'; ctx.fillRect(tx - .5, y + rh, 1, 5);
+    ctx.fillStyle = '#17201B'; ctx.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center';
+    ctx.fillText(has ? fmt(D.inv(D.lo + (D.hi - D.lo) * u), D.dec) : '–', tx, y + rh + 18);
+  }
+  y += rh + 44; ctx.textAlign = 'left';
+
+  // symbols
+  const sym = (draw, label) => { draw(px + 12, y - 5); ctx.fillStyle = '#17201B'; ctx.font = '13px "IBM Plex Sans", sans-serif'; ctx.fillText(label, px + 34, y); y += 24; };
+  sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
+  sym((x, yy) => { ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.6; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Límite de humedal (OSM)');
+  sym((x, yy) => { ctx.setLineDash([6, 3]); ctx.strokeStyle = '#c0262d'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - 11, yy); ctx.lineTo(x + 11, yy); ctx.stroke(); ctx.setLineDash([]); }, 'Perímetro de estudio');
+  sym((x, yy) => { ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, yy - 6, 20, 12); const c = document.createElement('canvas'); c.width = c.height = 6; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.6)'; g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.stroke(); ctx.fillStyle = ctx.createPattern(c, 'repeat'); ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sin dato en la fuente');
+  y += 8;
+
+  // stats by wetland
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11.5px "IBM Plex Sans", sans-serif'; ctx.fillText('VALORES POR HUMEDAL', px, y); y += 20;
+  ctx.font = '12.5px "IBM Plex Mono", monospace';
+  for (const [g, txt] of D.stats){
+    ctx.fillStyle = '#17201B'; ctx.textAlign = 'left'; ctx.fillText(g, px, y);
+    ctx.textAlign = 'right'; ctx.fillText(txt, px + iw, y);
+    y += 20;
+  }
+  ctx.textAlign = 'left'; y += 10;
+
+  // description
+  ctx.fillStyle = '#33403A'; ctx.font = '14px "IBM Plex Sans", sans-serif';
+  y = wrap(ctx, def.d, px, y, iw, 20);
+
+  // cartouche
+  const srcTxt = D.srcTxt;
+  let cy = LH - 170;
+  ctx.fillStyle = '#d4dbd3'; ctx.fillRect(px, cy - 22, iw, 1);
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11px "IBM Plex Sans", sans-serif';
+  ctx.fillText('LOCALIDAD DE KENNEDY · BOGOTÁ D.C.', px, cy); cy += 18;
+  ctx.fillStyle = '#33403A'; ctx.font = '12px "IBM Plex Sans", sans-serif';
+  cy = wrap(ctx, 'Datos: ' + srcTxt, px, cy, iw, 16);
+  cy = wrap(ctx, 'Humedales: OpenStreetMap (ODbL). Perímetro: ' + (S.perimName || 'perimetro_kennedy_polygon2.kml') + '.', px, cy, iw, 16);
+  cy = wrap(ctx, `WGS84 / Web Mercator (EPSG:3857) · ${D.method} · ${new Date().toISOString().slice(0, 10)}`, px, cy, iw, 16);
+}
+
+// ---------------- page ----------------
+const cards = $('cards'), cover = $('cover');
+const canvases = {};
+function build(){
+  cover.innerHTML = ''; cards.innerHTML = '';
+  for (const def of V){
+    const a = document.createElement('a'); a.href = '#plano-' + def.n; a.id = 'cv-' + def.n;
+    a.innerHTML = `<span class="sw" style="background:linear-gradient(90deg,${def.ramp.join(',')})"></span><b>${String(def.n).padStart(2, '0')}</b><span>${def.t}</span>`;
+    cover.append(a);
+    const card = document.createElement('article'); card.className = 'card'; card.id = 'plano-' + def.n;
+    const cv = document.createElement('canvas'); cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `Plano ${def.n}: ${def.t}`);
+    canvases[def.n] = cv;
+    const bar = document.createElement('div'); bar.className = 'bar';
+    let altHTML = '';
+    if (def.alt) altHTML = `<label class="check" for="alt-${def.n}">${def.alt.label}</label><select id="alt-${def.n}">${def.alt.opts.map(o => `<option value="${o[0]}"${S.alt[def.n] === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>`;
+    if (SATDEF[def.n]) altHTML += `<label class="check" for="src-${def.n}">Fuente</label><select id="src-${def.n}"><option value="campo"${S.src[def.n] === 'campo' ? ' selected' : ''}>Muestreo en campo</option><option value="sat"${S.src[def.n] === 'sat' ? ' selected' : ''}>Sentinel-2 (Copernicus)</option></select>`;
+    bar.innerHTML = `<div class="left"><span class="t">${String(def.n).padStart(2, '0')} · ${def.t}</span><span class="n" id="cnt-${def.n}"></span>${altHTML}</div><button type="button" id="dl-${def.n}">Descargar PNG</button>`;
+    card.append(cv, bar); cards.append(card);
+    $('dl-' + def.n).addEventListener('click', () => download(def));
+    if (def.alt) $('alt-' + def.n).addEventListener('change', e => { S.alt[def.n] = e.target.value; draw(def); });
+    if (SATDEF[def.n]) $('src-' + def.n).addEventListener('change', e => { S.src[def.n] = e.target.value; draw(def); });
+  }
+}
+async function draw(def){
+  await render(canvases[def.n], def, 0.8);
+  const n = S.rows.filter(r => isNum(valueOf(def, r))).length;
+  const sat = useSat(def);
+  $('cnt-' + def.n).textContent = sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} puntos con dato` : 'sin datos de campo en las fuentes');
+  $('cv-' + def.n).classList.toggle('empty', !n && !sat);
+}
+async function drawAll(){
+  $('status').textContent = 'Dibujando planos…';
+  for (const def of V) await draw(def);
+  $('status').textContent = `${S.rows.length} puntos · ${new Set(S.rows.map(r => r.fuente).filter(Boolean)).size} fuentes · mapa base ${$('base').selectedOptions[0].text}`;
+  $('zipall').disabled = false;
+}
+const fileName = def => `plano_${String(def.n).padStart(2, '0')}_${def.t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_$/, '')}.png`;
+async function toBlob(def){
+  const c = document.createElement('canvas');
+  await render(c, def, +$('res').value);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('No se pudo generar la imagen.')), 'image/png'));
+}
+function save(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function download(def){
+  const btn = $('dl-' + def.n); btn.disabled = true; btn.textContent = 'Generando…';
+  try { save(await toBlob(def), fileName(def)); btn.textContent = 'Descargado'; }
+  catch (e){ btn.textContent = 'Error'; $('status').textContent = e.message; }
+  setTimeout(() => { btn.disabled = false; btn.textContent = 'Descargar PNG'; }, 1500);
+}
+$('zipall').addEventListener('click', async () => {
+  const btn = $('zipall'); btn.disabled = true;
+  try {
+    const zip = new JSZip();
+    for (const def of V){ btn.textContent = `Generando ${def.n}/20…`; zip.file(fileName(def), await toBlob(def)); }
+    btn.textContent = 'Comprimiendo…';
+    save(await zip.generateAsync({ type: 'blob' }), 'planos_humedales_kennedy.zip');
+  } catch (e){ $('status').textContent = e.message; }
+  btn.textContent = 'Descargar los 20 (ZIP)'; btn.disabled = false;
+});
+
+$('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
+$('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });
+$('labels').addEventListener('change', e => { S.labels = e.target.checked; drawAll(); });
+$('csvfile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const rows = parseCSV(await f.text());
+    if (!rows.length) throw new Error('El CSV no tiene filas con columnas lat y lon.');
+    S.rows = rows; S.dataName = f.name; setPill(false); drawAll();
+  } catch (err){ $('status').textContent = err.message; }
+});
+$('kmlfile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { S.perim = parseKML(await f.text()); S.perimName = f.name; drawAll(); }
+  catch (err){ $('status').textContent = err.message; }
+});
+function setPill(builtin){
+  $('datalabel').textContent = builtin ? `Datos reales compilados · ${S.rows.length} puntos` : `Tu archivo: ${S.dataName} · ${S.rows.length} puntos`;
+}
+function renderSources(){
+  $('fuentes').innerHTML = S.fuentes.length ? S.fuentes.map(f => `<li><b>${f.id}</b> · ${f.titulo}${f.url ? ` · <a href="${f.url}" target="_blank" rel="noopener">enlace</a>` : ''}</li>`).join('') : '<li>Sin fuentes cargadas.</li>';
+}
+
+build();
+S.rows = parseCSV(window.MUESTREO || 'punto,lat,lon\n');
+setPill(true); renderSources();
+$('satrun').addEventListener('click', runSentinel);
+document.fonts.ready.then(async () => { await drawAll(); runSentinel(); });
+})();
+</script>
+</body>
+</html>
