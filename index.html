@@ -75,7 +75,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 <div class="wrap">
   <header>
     <h1>Planos hídricos · Kennedy</h1>
-    <p class="lede">Veinte planos temáticos de calidad y cantidad de agua para los humedales La Vaca, El Burro y Techo, dentro del perímetro de estudio de la localidad de Kennedy (Bogotá). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
+    <p class="lede">Veintiún planos temáticos de calidad y cantidad de agua, incluido uno de residuos plásticos, para los humedales La Vaca, El Burro y Techo, dentro del perímetro de estudio de la localidad de Kennedy (Bogotá). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
     <p class="lede"><a href="ndvi.html">Herramienta NDVI Sentinel-2 con filtro Savitzky-Golay →</a></p>
   </header>
 
@@ -86,8 +86,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
         <span class="status" id="status"></span>
       </div>
       <div class="ctl">
-        <button type="button" id="zipall" disabled>Descargar los 20 (ZIP)</button>
-        <button type="button" class="ghost" id="zipbare" disabled>20 planos solos (ZIP)</button>
+        <button type="button" id="zipall" disabled>Descargar los 21 (ZIP)</button>
+        <button type="button" class="ghost" id="zipbare" disabled>21 planos solos (ZIP)</button>
         <label class="btn ghost" for="csvfile">Cargar CSV propio</label>
         <input type="file" id="csvfile" accept=".csv,text/csv" hidden>
         <label class="btn ghost" for="kmlfile">Cambiar perímetro (KML)</label>
@@ -118,7 +118,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
     <div class="ctl" style="justify-content:space-between">
       <div style="display:flex;flex-direction:column;gap:4px;min-width:0;max-width:70ch">
         <h2>Copernicus Sentinel-2</h2>
-        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Mediana por banda (B2, B3, B4, B5, B8, B11, B12) y un índice espectral por plano: MNDWI (agua), NDCI (clorofila), NDTI y B4 (turbiedad y sólidos), Stumpf (profundidad), SI (salinidad), NDBI (superficie construida), AWEI, BSI, NDVI, SAVI, NDMI, MSI, GNDVI y relaciones de bandas. Salvo el MNDWI del plano 16, son indicadores relativos sin calibrar: muestran la variación espectral asociada a la variable, no su valor medido. Cada plano elige su fuente con el selector «Fuente».</p>
+        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Mediana por banda (B2, B3, B4, B5, B6, B8, B11, B12) y un índice espectral por plano: MNDWI (agua), FDI (residuos plásticos flotantes), NDCI (clorofila), NDTI y B4 (turbiedad y sólidos), Stumpf (profundidad), SI (salinidad), NDBI (superficie construida), AWEI, BSI, NDVI, SAVI, NDMI, MSI, GNDVI y relaciones de bandas. Salvo el MNDWI del plano 16, son indicadores relativos sin calibrar: muestran la variación espectral asociada a la variable, no su valor medido. Cada plano elige su fuente con el selector «Fuente».</p>
         <span class="status" id="satstatus">Esperando…</span>
       </div>
       <div class="ctl">
@@ -127,7 +127,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
         <div class="field"><label for="sres">Píxel</label><select id="sres"><option value="10" selected>10 m</option><option value="20">20 m</option></select></div>
         <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
         <button type="button" id="satrun">Recalcular</button>
-        <div class="field"><span class="lbl">Fuente en los 20 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
+        <div class="field"><span class="lbl">Fuente en los 21 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
       </div>
     </div>
   </section>
@@ -211,10 +211,13 @@ const V = [
   {n:20, t:'Carga contaminante', v:'concentración × caudal', u:'kg/día', dec:1, alt:{label:'Concentración', opts:[['dbo5','DBO5'],['dqo','DQO'],['sst','SST'],['p_total','P total'],['ntk','NTK'],['grasas_aceites','Grasas y aceites']]},
    calcAlt:(r,c)=>(isNum(r[c])&&isNum(r.caudal))?r[c]*r.caudal*0.0864:NaN,
    d:'Cuánto contaminante entra al sistema: concentración (mg/L) × caudal (L/s) × 0,0864. Solo se calcula donde una misma fila trae concentración y caudal; en las fuentes actuales no coinciden, así que queda sin dato.',
-   ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']}
+   ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']},
+  {n:21, t:'Residuos plásticos y sólidos', v:'residuos sólidos extraídos por la EAAB (acumulado desde 2020)', u:'t', col:'residuos_solidos', dec:0,
+   d:'Presión por residuos sólidos, en buena parte plásticos (bolsas, botellas, icopor), que entran por canales y escorrentía. En campo solo hay tonelaje acumulado por humedal (EAAB); ninguna fuente separa el plástico ni reporta microplásticos en estos humedales. Con Sentinel-2, el FDI resalta acumulaciones flotantes densas (≥30 % del píxel); el buchón y la vegetación acuática también lo elevan.',
+   ramp:['#f2f0f7','#9ecae1','#4292c6','#e6550d','#7f2704']}
 ];
 const GROUPS = { 'La Vaca Norte':'La Vaca', 'La Vaca Sur':'La Vaca', 'El Burro':'El Burro', 'Techo':'Techo' };
-const NUMCOLS = ['lat','lon','ph','od','p_total','ntk','nh4','dqo','dbo5','turbiedad','sst','conductividad','grasas_aceites','coliformes_fecales','coliformes_totales','profundidad','area_inundada','nivel_freatico','conexiones','caudal'];
+const NUMCOLS = ['lat','lon','ph','od','p_total','ntk','nh4','dqo','dbo5','turbiedad','sst','conductividad','grasas_aceites','coliformes_fecales','coliformes_totales','profundidad','area_inundada','nivel_freatico','conexiones','caudal','residuos_solidos'];
 
 function isNum(x){ return typeof x === 'number' && isFinite(x); }
 function sum(a){ return a.every(isNum) ? a.reduce((s,x)=>s+x,0) : NaN; }
@@ -224,7 +227,7 @@ const $ = id => document.getElementById(id);
 const S = {
   rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
   perim: window.PERIMETRO, hum: window.HUMEDALES,
-  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20) ? 'sat' : 'campo']))
+  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 21 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20 || i + 1 === 21) ? 'sat' : 'campo']))
 };
 
 // ---------------- CSV ----------------
@@ -633,7 +636,10 @@ const SATDEF = {
   17: { idx: 'msi',   f: b => b.S1 / b.N,              sub: 'MSI · estrés hídrico B11/B8 (contexto para nivel freático)' },
   18: { idx: 'ndbi',  f: b => nd(b.S1, b.N),           sub: 'NDBI · superficie construida (presión urbana, fuentes de vertimiento)' },
   19: { idx: 'awei',  f: b => 4 * (b.G - b.S1) - (0.25 * b.N + 2.75 * b.S2), sub: 'AWEI · extracción de agua superficial (contexto para caudal)' },
-  20: { idx: 'bsi',   f: b => ((b.S1 + b.R) - (b.N + b.B)) / ((b.S1 + b.R) + (b.N + b.B)), sub: 'BSI · suelo desnudo (fuente de carga por escorrentía)' }
+  20: { idx: 'bsi',   f: b => ((b.S1 + b.R) - (b.N + b.B)) / ((b.S1 + b.R) + (b.N + b.B)), sub: 'BSI · suelo desnudo (fuente de carga por escorrentía)' },
+  // Floating Debris Index (Biermann et al. 2020, Sci. Rep. 10:5364): NIR minus a baseline between B6 and B11
+  // interpolated at the NIR wavelength; λ in nm (B4 664.6, B8 832.8, B11 1613.7)
+  21: { idx: 'fdi',   f: b => b.N - (b.E2 + (b.S1 - b.E2) * (832.8 - 664.6) / (1613.7 - 664.6) * 10), sub: 'FDI · Floating Debris Index (Biermann et al. 2020): residuos flotantes, incluido plástico', water: true }
 };
 Object.values(SATDEF).forEach(d => { d.unit = d.area ? 'índice MNDWI' : 'índice ' + d.idx.toUpperCase(); });
 const SAT = { ready: false, cache: {} };
@@ -642,7 +648,7 @@ function satIdx(key){
   if (SAT.cache[key]) return SAT.cache[key];
   const d = Object.values(SATDEF).find(x => x.idx === key), N = SAT.W * SAT.H, out = new Float32Array(N), Bd = SAT.band, b = {};
   for (let p = 0; p < N; p++){
-    b.B = Bd.B[p]; b.G = Bd.G[p]; b.R = Bd.R[p]; b.E = Bd.E[p]; b.N = Bd.N[p]; b.S1 = Bd.S1[p]; b.S2 = Bd.S2[p];
+    b.B = Bd.B[p]; b.G = Bd.G[p]; b.R = Bd.R[p]; b.E = Bd.E[p]; b.E2 = Bd.E2[p]; b.N = Bd.N[p]; b.S1 = Bd.S1[p]; b.S2 = Bd.S2[p];
     if (b.G !== b.G){ out[p] = NaN; continue; }
     const v = d.f(b); out[p] = isFinite(v) ? v : NaN;
   }
@@ -650,7 +656,7 @@ function satIdx(key){
 }
 function utmDef(epsg){ const s = epsg > 32700; return `+proj=utm +zone=${s ? epsg - 32700 : epsg - 32600}${s ? ' +south' : ''} +datum=WGS84 +units=m +no_defs`; }
 const itemEpsg = it => +(it.properties['proj:epsg'] || String(it.properties['proj:code'] || '').split(':')[1]);
-const BANDS = [['B', 'blue'], ['G', 'green'], ['R', 'red'], ['E', 'rededge1'], ['N', 'nir'], ['S1', 'swir16'], ['S2', 'swir22']];
+const BANDS = [['B', 'blue'], ['G', 'green'], ['R', 'red'], ['E', 'rededge1'], ['E2', 'rededge2'], ['N', 'nir'], ['S1', 'swir16'], ['S2', 'swir22']];
 async function runSentinel(){
   const st = $('satstatus'), btn = $('satrun');
   btn.disabled = true; SAT.ready = false;
@@ -692,7 +698,7 @@ async function runSentinel(){
           for (let p = 0; p < N; p++){ const q = scl[p]; if (q === 0 || q === 1 || q === 3 || q === 8 || q === 9 || q === 10) for (let k = 0; k < BANDS.length; k++) arrs[k][p] = 0; }
           BANDS.forEach(([k, a], i) => { stacks[k].push(arrs[i]); if (!scales[k]){ const b = (it.assets[a]['raster:bands'] || [{}])[0]; scales[k] = [b.scale ?? 1, b.offset ?? 0]; } });
         } catch (err){ console.warn(it.id, err); }
-        done++; st.textContent = `Leyendo Sentinel-2 (7 bandas + SCL)… ${done}/${items.length}`;
+        done++; st.textContent = `Leyendo Sentinel-2 (8 bandas + SCL)… ${done}/${items.length}`;
       }
     }));
     if (!stacks.G.length) throw new Error('No se pudo leer ninguna escena Sentinel-2.');
@@ -767,6 +773,7 @@ function drawSat(ctx, def, g){
       const gi = Math.floor((e[0] - ub[0]) / res), gj = Math.floor((ub[3] - e[1]) / res);
       if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue;
       const p = gj * W + gi;
+      if (sd.water && SAT.cellFeat[p] < 0) continue;   // debris indices are only meaningful over the wetlands
       vals[j * ow + i] = A[p];
     }
   }
@@ -808,7 +815,7 @@ function drawSat(ctx, def, g){
   }
   return {
     lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2,
-    symbol: `Píxel Sentinel-2 de ${res} m`, satNote: !sd.area,
+    symbol: `Píxel Sentinel-2 de ${res} m` + (sd.water ? ' (solo dentro de los humedales)' : ''), satNote: !sd.area,
     stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]} a ${res} m, máscara de nubes SCL`,
     method: `Índice ${sd.idx.toUpperCase()} · ${res} m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · indicador satelital relativo sin calibrar; no es una medición de la variable')
   };
@@ -892,7 +899,7 @@ function sheet(ctx, def, D){
   ctx.textAlign = 'left';
   let y = 56;
   ctx.fillStyle = '#6b7670'; ctx.font = '500 13px "IBM Plex Mono", monospace';
-  ctx.fillText(`PLANO ${String(def.n).padStart(2, '0')} / 20`, px, y); y += 34;
+  ctx.fillText(`PLANO ${String(def.n).padStart(2, '0')} / ${V.length}`, px, y); y += 34;
   ctx.fillStyle = '#17201B'; ctx.font = '700 34px "IBM Plex Sans Condensed", sans-serif';
   y = wrap(ctx, def.t, px, y, iw, 38);
   ctx.fillStyle = '#4a5550'; ctx.font = '400 16px "IBM Plex Sans", sans-serif';
@@ -1032,22 +1039,22 @@ $('zipall').addEventListener('click', async () => {
   const btn = $('zipall'); btn.disabled = true;
   try {
     const zip = new JSZip();
-    for (const def of V){ btn.textContent = `Generando ${def.n}/20…`; zip.file(fileName(def), await toBlob(def)); }
+    for (const def of V){ btn.textContent = `Generando ${def.n}/${V.length}…`; zip.file(fileName(def), await toBlob(def)); }
     btn.textContent = 'Comprimiendo…';
     save(await zip.generateAsync({ type: 'blob' }), 'planos_humedales_kennedy.zip');
   } catch (e){ $('status').textContent = e.message; }
-  btn.textContent = 'Descargar los 20 (ZIP)'; btn.disabled = false;
+  btn.textContent = 'Descargar los 21 (ZIP)'; btn.disabled = false;
 });
 
 $('zipbare').addEventListener('click', async () => {
   const btn = $('zipbare'); btn.disabled = true;
   try {
     const zip = new JSZip();
-    for (const def of V){ btn.textContent = `Generando ${def.n}/20…`; zip.file(fileName(def).replace('.png', '_solo.png'), await toBlobBare(def)); }
+    for (const def of V){ btn.textContent = `Generando ${def.n}/${V.length}…`; zip.file(fileName(def).replace('.png', '_solo.png'), await toBlobBare(def)); }
     btn.textContent = 'Comprimiendo…';
     save(await zip.generateAsync({ type: 'blob' }), 'planos_solos_humedales_kennedy.zip');
   } catch (e){ $('status').textContent = e.message; }
-  btn.textContent = '20 planos solos (ZIP)'; btn.disabled = false;
+  btn.textContent = '21 planos solos (ZIP)'; btn.disabled = false;
 });
 $('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
 $('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });

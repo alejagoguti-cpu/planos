@@ -1,7 +1,7 @@
 # Fuentes y cobertura de variables: muestreo_real.csv
 
 Humedales: La Vaca Norte, La Vaca Sur, El Burro y Techo (localidad de Kennedy, Bogotá).
-El archivo tiene 58 filas y todas caen dentro del polígono de estudio.
+El archivo tiene 59 filas y todas caen dentro del polígono de estudio.
 
 ## 1. Fuentes usadas (id de la columna `fuente`)
 
@@ -14,6 +14,7 @@ El archivo tiene 58 filas y todas caen dentro del polígono de estudio.
 | PMA_BURRO_2023 | PMA Reserva Distrital de Humedal El Burro, versión final 2023. Adoptado por la Res. SDA 02927 de 2023 | SDA | 2023 (monitoreo del 30 de nov. y 1 de dic. de 2022) | https://oab.ambientebogota.gov.co/descargar/15021/ (zip). Ficha: https://oab.ambientebogota.gov.co/?post_type=dlm_download&p=15021 |
 | PMA_TECHO_2009 | Formulación del Plan de Manejo Ambiental del Humedal de Techo (Plan_Accion_Techo.pdf, 202 p.) | Pontificia Universidad Javeriana (IDEADE) / EAAB / SDA | mar. 2007, ajustes jul. 2009 (muestreo de 2006) | https://www.acueducto.com.co/wps/wcm/connect/EAB2/d449eaf9-00c9-4824-b795-147a16a2e028/Plan_Accion_Techo.pdf?MOD=AJPERES |
 | PMA_TECHO_2023 | PMA Reserva Distrital de Humedal de Techo, versión final 2023. Es el PMA actualizado que adopta la Res. SDA 2924 de 2023 | SDA | 2023 | https://oab.ambientebogota.gov.co/descargar/15047/ (zip). Ficha: https://oab.ambientebogota.gov.co/?post_type=dlm_download&p=15047 |
+| EAAB_2025 | Distrito interviene y recupera el Humedal La Vaca sector sur en Kennedy (nota de prensa) | Alcaldía de Bogotá / EAAB | 20 mar. 2025 (acumulado desde 2020) | https://bogota.gov.co/en/node/247374 |
 
 ### Fuentes revisadas que no aportaron filas
 - **Artículo de la Revista Tecnura / Tecnogestión de la UD** (https://revistas.udistrital.edu.co/index.php/tecges/article/download/4330/6336): trata del **humedal Jaboque** (Engativá), no de los humedales de Kennedy. No se usó.
@@ -69,3 +70,11 @@ El archivo tiene 58 filas y todas caen dentro del polígono de estudio.
 - **Área inundada de La Vaca en 2023**: el PMA da 2.73 ha para TR100 en todo el humedal sin separar norte y sur, así que no se asignó a ningún sector.
 - **Conexiones por punto**: las fuentes solo dan totales por área de aporte o por sector. No hay conteos por punto de muestreo.
 - **Techo 2019-2021**: los datos de la SDA solo están en gráficos (ver la sección 1).
+
+## 5. Residuos plásticos y sólidos (plano 21, columna `residuos_solidos`)
+
+- **Dato usado:** La Vaca, 732 t de residuos sólidos extraídos por la EAAB desde 2020 (además 125 t de RCD), cita textual de la nota EAAB_2025. Es un acumulado de los dos sectores, sin ubicación por punto; se dibuja en el punto representativo del sector Norte (`VACA-RESIDUOS-2020-2025`). El plástico no se reporta aparte.
+- **El Burro y Techo:** no se encontró tonelaje propio. El informe de gestión SDA 2020 del PEDH El Burro (Tabla 18) registra jornadas de limpieza sin kg, e identifica la entrada del canal Castilla (sector 1, costado norte) y el colector de la Cra. 85 con Av. Ciudad de Cali (4°38'40.8"N 74°09'05.0"W) como entradas de basura.
+- **No usados por no ser de un solo humedal:** 760 kg recogidos en 6 jornadas en La Vaca, El Burro y Techo juntos (SDA, 29-oct-2013, https://bogota.gov.co/mi-ciudad/ambiente/760-kilogramos-de-basura-fueron-recolectados-en-humedales-de-kennedy); ~240 t retiradas del canal Castilla (19-jun-2026, https://bogota.gov.co/mi-ciudad/habitat/jornada-de-limpieza-y-recoleccion-de-residuos-en-el-canal-castilla); totales de los 17 humedales de Bogotá (1.427 t en 2021; 2.538 t o 1.978 t en 2024, según la nota).
+- **Microplásticos:** no hay estudios publicados en La Vaca, El Burro ni Techo. Los más cercanos son el humedal Gualí (Funza-Mosquera; Porras-Rojas et al. 2023, *Microplastics* 2(3):255-267, doi:10.3390/microplastics2030021) y una tesis de la U. Distrital sobre el río Fucha (https://repository.udistrital.edu.co/items/0dc65fe7-47f2-4f53-a527-a859f71709b2), no revisada.
+- **Sentinel-2:** FDI de Biermann et al. (2020), doi:10.1038/s41598-020-62298-z. Alternativa: *Plastic Index* PI = B8/(B8 + B4) (Themistocleous et al. 2020, doi:10.3390/rs12162648). Barros et al. (2023, arXiv:2306.15008) no lograron separar plástico de agua con FDI ni PI en sus datos, así que el plano es indicativo.
