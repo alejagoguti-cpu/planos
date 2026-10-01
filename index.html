@@ -216,7 +216,7 @@ const V = [
    d:'Presión por residuos sólidos, en buena parte plásticos (bolsas, botellas, icopor), que entran por canales y escorrentía. En campo solo hay tonelaje acumulado por humedal (EAAB); ninguna fuente separa el plástico ni reporta microplásticos en estos humedales. Con Sentinel-2, el FDI resalta acumulaciones flotantes densas (≥30 % del píxel); el buchón y la vegetación acuática también lo elevan.',
    ramp:['#f2f0f7','#9ecae1','#4292c6','#e6550d','#7f2704']},
   {n:22, t:'P · Presión económica', v:'predios/huellas con actividad económica', u:'clasificación', mode:'economy',
-   d:'Localiza la concentración de presión económica alrededor de los humedales. Alta: Corabastos, comercio mayorista, mercados, bodegas e industria; media: comercio minorista y usos comerciales/retail. La lámina final rellena únicamente los predios de presión alta en rojo; los demás quedan sin relleno.',
+   d:'Localiza la concentración de presión económica alrededor de los humedales. Clasifica la presión económica con NDBI de Sentinel-2 como proxy de superficie construida: alta, media o baja. Los polígonos solo funcionan como máscara predial; la lámina final rellena únicamente los predios de presión alta en rojo y deja el resto sin relleno.',
    ramp:['#ffffff','#d73027']}
 ];
 const GROUPS = { 'La Vaca Norte':'La Vaca', 'La Vaca Sur':'La Vaca', 'El Burro':'El Burro', 'Techo':'Techo' };
@@ -397,21 +397,36 @@ async function economyData(){
   if (!ECON) ECON = fetch('data/presion_economica.geojson').then(r => { if (!r.ok) throw new Error('No se pudo cargar la capa predial.'); return r.json(); });
   return ECON;
 }
+function economyStats(){
+  if (!SAT.ready) return null;
+  if (ECON.statsVersion === SAT.version) return ECON.stats;
+  const A = satIdx('ndbi'), {W,H,res,ub} = SAT, inv = proj4(SAT.def, 'EPSG:4326'), vals = [];
+  if (!SAT.cellLL || SAT.cellLLVersion !== SAT.version){ SAT.cellLL = new Float64Array(W*H*2); for(let j=0;j<H;j++) for(let i=0;i<W;i++){ const ll=inv.forward([ub[0]+(i+.5)*res,ub[3]-(j+.5)*res]); const q=(j*W+i)*2; SAT.cellLL[q]=ll[0]; SAT.cellLL[q+1]=ll[1]; } SAT.cellLLVersion=SAT.version; }
+  const feats = ECON.features || [];
+  for (const f of feats){
+    const ringsF = f.geometry.type === 'Polygon' ? [f.geometry.coordinates[0]] : f.geometry.coordinates.map(p => p[0]);
+    const flat = ringsF.flat(), bx=[Math.min(...flat.map(c=>c[0])),Math.min(...flat.map(c=>c[1])),Math.max(...flat.map(c=>c[0])),Math.max(...flat.map(c=>c[1]))];
+    const ec=flat.map(c=>proj4('EPSG:4326',SAT.def,c)), ex=[Math.max(0,Math.floor((Math.min(...ec.map(c=>c[0]))-ub[0])/res)-1),Math.min(W-1,Math.ceil((Math.max(...ec.map(c=>c[0]))-ub[0])/res)+1)], ey=[Math.max(0,Math.floor((ub[3]-Math.max(...ec.map(c=>c[1])))/res)-1),Math.min(H-1,Math.ceil((ub[3]-Math.min(...ec.map(c=>c[1])))/res)+1)];
+    let sum=0,n=0;
+    for(let j=ey[0];j<=ey[1];j++) for(let i=ex[0];i<=ex[1];i++){ const q=(j*W+i)*2,llx=SAT.cellLL[q],lly=SAT.cellLL[q+1]; if(llx<bx[0]||llx>bx[2]||lly<bx[1]||lly>bx[3]) continue; if(ringsF.some(r=>pip(llx,lly,r))){const v=A[j*W+i]; if(v===v){sum+=v;n++;}} }
+    vals.push(n ? sum/n : NaN);
+  }
+  const good=vals.filter(v=>v===v).sort((a,b)=>a-b), q=p=>good.length ? good[Math.min(good.length-1,Math.floor((good.length-1)*p))] : NaN, q50=q(.5), q75=q(.75);
+  ECON.stats=vals.map(v=>v!==v?'sin dato':v>=q75?'alta':v>=q50?'media':'baja'); ECON.statsValues=vals; ECON.statsVersion=SAT.version; return ECON.stats;
+}
 function drawEconomy(ctx, def, {X, Y, P, C}){
   const peri = new Path2D(); P.forEach((p,i) => i ? peri.lineTo(X(p[0]),Y(p[1])) : peri.moveTo(X(p[0]),Y(p[1]))); peri.closePath();
   ctx.save(); ctx.clip(peri);
-  const features = ECON.features || [];
-  for (const f of features){
-    const rr = f.geometry.type === 'Polygon' ? [f.geometry.coordinates[0]] : f.geometry.coordinates.map(p => p[0]);
-    const path = new Path2D();
-    for (const r of rr){ r.forEach((c,i) => i ? path.lineTo(X(c[0]),Y(c[1])) : path.moveTo(X(c[0]),Y(c[1]))); path.closePath(); }
-    const high = f.properties.pressure === 'alta';
-    ctx.fillStyle = high ? 'rgba(215,48,39,.84)' : 'rgba(255,255,255,0)';
-    ctx.fill(path);
-    ctx.strokeStyle = high ? '#a50f15' : 'rgba(92,103,96,.55)'; ctx.lineWidth = high ? 1.3 : .65; ctx.stroke(path);
+  const features = ECON.features || [], stats = economyStats();
+  for (let k=0;k<features.length;k++){
+    const f=features[k], rr=f.geometry.type==='Polygon'?[f.geometry.coordinates[0]]:f.geometry.coordinates.map(p=>p[0]), path=new Path2D();
+    for(const r of rr){r.forEach((c,i)=>i?path.lineTo(X(c[0]),Y(c[1])):path.moveTo(X(c[0]),Y(c[1])));path.closePath();}
+    const high=stats && stats[k]==='alta';
+    ctx.fillStyle=high?'rgba(215,48,39,.84)':'rgba(255,255,255,0)'; ctx.fill(path);
+    ctx.strokeStyle=high?'#a50f15':'rgba(92,103,96,.55)'; ctx.lineWidth=high?1.3:.65; ctx.stroke(path);
   }
   ctx.restore();
-  return {features, high: features.filter(f => f.properties.pressure === 'alta').length, medium: features.filter(f => f.properties.pressure === 'media').length};
+  return {features, stats, high:stats?stats.filter(x=>x==='alta').length:0, medium:stats?stats.filter(x=>x==='media').length:0, low:stats?stats.filter(x=>x==='baja').length:0};
 }
 // logical layout 1500 x 1000: map 1000x1000 on the left, sheet panel 500 wide on the right
 const LW = 1500, LH = 1000, MW = 1000;
@@ -468,7 +483,7 @@ async function render(canvas, def, k, opts = {}){
   if (def.mode === 'economy'){
     const E = await economyData(); ECON = E;
     const D = drawEconomy(ctx, def, {X, Y, P, C});
-    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'Predios/huellas económicas OSM', unit:'presión económica', stats:[['Alta',`${D.high} predios rojos`],['Media',`${D.medium} predios sin relleno`],['Baja','sin relleno / sin etiqueta']], srcTxt:'OpenStreetMap (consulta 30-sep-2026); clasificación interpretativa por etiquetas de uso y actividad', method:'Predios/huellas OSM; solo alta presión rellena en rojo'}); } return;
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'NDBI Sentinel-2 sobre máscara predial OSM', unit:'presión económica', stats:[['Alta',D.stats?`${D.high} predios rojos`:'esperando Sentinel-2'],['Media',D.stats?`${D.medium} predios sin relleno`:'—'],['Baja',D.stats?`${D.low} predios sin relleno`:'—']], srcTxt:D.stats?'Copernicus Sentinel-2 L2A (ESA), vía Earth Search; mediana multitemporal y NDBI por predio':'Esperando cálculo de Sentinel-2', method:D.stats?'NDBI = (SWIR1−NIR)/(SWIR1+NIR); cuantiles por predio; solo alta presión rellena en rojo':'Predios/huellas OSM como máscara, sin clasificación hasta completar Sentinel-2'}); } return;
   }
 
   // --- satellite mode
@@ -943,7 +958,7 @@ function sheet(ctx, def, D){
   const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
   if (D.economy){
     y += 6;
-    const items = [['#d73027','ALTA · Corabastos, comercio mayorista, industria, bodegas y mercados'],['transparent','MEDIA/BAJA · sin relleno (solo referencia de clasificación)']];
+    const items = [['#d73027','ALTA · NDBI Sentinel-2 alto · único relleno'],['transparent','MEDIA/BAJA · NDBI Sentinel-2 menor · sin relleno']];
     for (const [col,label] of items){ ctx.fillStyle=col; ctx.fillRect(px,y,26,16); ctx.strokeStyle='#6b7670'; ctx.lineWidth=.8; ctx.strokeRect(px,y,26,16); ctx.fillStyle='#17201B'; ctx.font='12.5px "IBM Plex Mono", monospace'; ctx.fillText(label,px+34,y+12.5); y+=24; }
     y += 16;
   } else if (D.classes){
