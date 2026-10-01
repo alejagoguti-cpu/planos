@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Planos hídricos Kennedy</title>
+<title>Planos hídricos Kennedy · Presión económica</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -75,7 +75,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 <div class="wrap">
   <header>
     <h1>Planos hídricos · Kennedy</h1>
-    <p class="lede">Veintiún planos temáticos de calidad y cantidad de agua, incluido uno de residuos plásticos, para los humedales La Vaca, El Burro y Techo, dentro del perímetro de estudio de la localidad de Kennedy (Bogotá). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
+    <p class="lede">Veintidós planos temáticos de calidad y cantidad de agua, incluido uno de residuos plásticos, para los humedales La Vaca, El Burro y Techo, dentro del perímetro de estudio de la localidad de Kennedy (Bogotá). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
     <p class="lede"><a href="ndvi.html">Herramienta NDVI Sentinel-2 con filtro Savitzky-Golay →</a></p>
   </header>
 
@@ -86,8 +86,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
         <span class="status" id="status"></span>
       </div>
       <div class="ctl">
-        <button type="button" id="zipall" disabled>Descargar los 21 (ZIP)</button>
-        <button type="button" class="ghost" id="zipbare" disabled>21 planos solos (ZIP)</button>
+        <button type="button" id="zipall" disabled>Descargar los 22 (ZIP)</button>
+        <button type="button" class="ghost" id="zipbare" disabled>22 planos solos (ZIP)</button>
         <label class="btn ghost" for="csvfile">Cargar CSV propio</label>
         <input type="file" id="csvfile" accept=".csv,text/csv" hidden>
         <label class="btn ghost" for="kmlfile">Cambiar perímetro (KML)</label>
@@ -127,7 +127,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
         <div class="field"><label for="sres">Píxel</label><select id="sres"><option value="10" selected>10 m</option><option value="20">20 m</option></select></div>
         <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
         <button type="button" id="satrun">Recalcular</button>
-        <div class="field"><span class="lbl">Fuente en los 21 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
+        <div class="field"><span class="lbl">Fuente en los 22 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
       </div>
     </div>
   </section>
@@ -214,7 +214,10 @@ const V = [
    ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']},
   {n:21, t:'Residuos plásticos y sólidos', v:'residuos sólidos extraídos por la EAAB (acumulado desde 2020)', u:'t', col:'residuos_solidos', dec:0,
    d:'Presión por residuos sólidos, en buena parte plásticos (bolsas, botellas, icopor), que entran por canales y escorrentía. En campo solo hay tonelaje acumulado por humedal (EAAB); ninguna fuente separa el plástico ni reporta microplásticos en estos humedales. Con Sentinel-2, el FDI resalta acumulaciones flotantes densas (≥30 % del píxel); el buchón y la vegetación acuática también lo elevan.',
-   ramp:['#f2f0f7','#9ecae1','#4292c6','#e6550d','#7f2704']}
+   ramp:['#f2f0f7','#9ecae1','#4292c6','#e6550d','#7f2704']},
+  {n:22, t:'P · Presión económica', v:'predios/huellas con actividad económica', u:'clasificación', mode:'economy',
+   d:'Localiza la concentración de presión económica alrededor de los humedales. Alta: Corabastos, comercio mayorista, mercados, bodegas e industria; media: comercio minorista y usos comerciales/retail. La lámina final rellena únicamente los predios de presión alta en rojo; los demás quedan sin relleno.',
+   ramp:['#ffffff','#d73027']}
 ];
 const GROUPS = { 'La Vaca Norte':'La Vaca', 'La Vaca Sur':'La Vaca', 'El Burro':'El Burro', 'Techo':'Techo' };
 const NUMCOLS = ['lat','lon','ph','od','p_total','ntk','nh4','dqo','dbo5','turbiedad','sst','conductividad','grasas_aceites','coliformes_fecales','coliformes_totales','profundidad','area_inundada','nivel_freatico','conexiones','caudal','residuos_solidos'];
@@ -227,7 +230,7 @@ const $ = id => document.getElementById(id);
 const S = {
   rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
   perim: window.PERIMETRO, hum: window.HUMEDALES,
-  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 21 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20 || i + 1 === 21) ? 'sat' : 'campo']))
+  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, iso: true, points: true, labels: true, wetlands: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 22 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20 || i + 1 === 21) ? 'sat' : 'campo']))
 };
 
 // ---------------- CSV ----------------
@@ -389,6 +392,27 @@ function tile(url){
 }
 
 // ---------------- render ----------------
+let ECON = null;
+async function economyData(){
+  if (!ECON) ECON = fetch('data/presion_economica.geojson').then(r => { if (!r.ok) throw new Error('No se pudo cargar la capa predial.'); return r.json(); });
+  return ECON;
+}
+function drawEconomy(ctx, def, {X, Y, P, C}){
+  const peri = new Path2D(); P.forEach((p,i) => i ? peri.lineTo(X(p[0]),Y(p[1])) : peri.moveTo(X(p[0]),Y(p[1]))); peri.closePath();
+  ctx.save(); ctx.clip(peri);
+  const features = ECON.features || [];
+  for (const f of features){
+    const rr = f.geometry.type === 'Polygon' ? [f.geometry.coordinates[0]] : f.geometry.coordinates.map(p => p[0]);
+    const path = new Path2D();
+    for (const r of rr){ r.forEach((c,i) => i ? path.lineTo(X(c[0]),Y(c[1])) : path.moveTo(X(c[0]),Y(c[1]))); path.closePath(); }
+    const high = f.properties.pressure === 'alta';
+    ctx.fillStyle = high ? 'rgba(215,48,39,.84)' : 'rgba(255,255,255,0)';
+    ctx.fill(path);
+    ctx.strokeStyle = high ? '#a50f15' : 'rgba(92,103,96,.55)'; ctx.lineWidth = high ? 1.3 : .65; ctx.stroke(path);
+  }
+  ctx.restore();
+  return {features, high: features.filter(f => f.properties.pressure === 'alta').length, medium: features.filter(f => f.properties.pressure === 'media').length};
+}
 // logical layout 1500 x 1000: map 1000x1000 on the left, sheet panel 500 wide on the right
 const LW = 1500, LH = 1000, MW = 1000;
 async function render(canvas, def, k, opts = {}){
@@ -439,6 +463,13 @@ async function render(canvas, def, k, opts = {}){
     ctx.fillStyle = '#4a5550'; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'right';
     ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - FR - 8, LH - FR - 8);
   };
+
+  // --- economic pressure mode: only high-pressure polygons receive a red fill
+  if (def.mode === 'economy'){
+    const E = await economyData(); ECON = E;
+    const D = drawEconomy(ctx, def, {X, Y, P, C});
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'Predios/huellas económicas OSM', unit:'presión económica', stats:[['Alta',`${D.high} predios rojos`],['Media',`${D.medium} predios sin relleno`],['Baja','sin relleno / sin etiqueta']], srcTxt:'OpenStreetMap (consulta 30-sep-2026); clasificación interpretativa por etiquetas de uso y actividad', method:'Predios/huellas OSM; solo alta presión rellena en rojo'}); } return;
+  }
 
   // --- satellite mode
   if (useSat(def)){
@@ -910,7 +941,12 @@ function sheet(ctx, def, D){
   ctx.fillText(('LEYENDA · ' + D.unit + (D.log ? ' (escala log)' : '')).toUpperCase(), px, y); y += 12;
   const rw = iw, rh = 16;
   const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
-  if (D.classes){
+  if (D.economy){
+    y += 6;
+    const items = [['#d73027','ALTA · Corabastos, comercio mayorista, industria, bodegas y mercados'],['transparent','MEDIA/BAJA · sin relleno (solo referencia de clasificación)']];
+    for (const [col,label] of items){ ctx.fillStyle=col; ctx.fillRect(px,y,26,16); ctx.strokeStyle='#6b7670'; ctx.lineWidth=.8; ctx.strokeRect(px,y,26,16); ctx.fillStyle='#17201B'; ctx.font='12.5px "IBM Plex Mono", monospace'; ctx.fillText(label,px+34,y+12.5); y+=24; }
+    y += 16;
+  } else if (D.classes){
     y += 6;
     const cols = D.classes.length > 5 ? 2 : 1, cw = iw / cols;
     D.classes.forEach((c, i) => {
@@ -936,7 +972,8 @@ function sheet(ctx, def, D){
 
   // symbols
   const sym = (draw, label) => { draw(px + 12, y - 5); ctx.fillStyle = '#17201B'; ctx.font = '13px "IBM Plex Sans", sans-serif'; ctx.fillText(label, px + 34, y); y += 24; };
-  if (D.symbol.startsWith('Píxel') || S.conv.points) sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
+  if (D.economy) sym((x, yy) => { ctx.fillStyle='#d73027'; ctx.fillRect(x-10,yy-6,20,12); ctx.strokeStyle='#a50f15'; ctx.strokeRect(x-10,yy-6,20,12); }, 'Predio de presión alta (único relleno de la lámina)');
+  if (!D.economy && (D.symbol.startsWith('Píxel') || S.conv.points)) sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
   if (S.conv.wetlands) sym((x, yy) => { ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.6; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Límite de humedal (OSM)');
   if (D.classes && S.conv.iso) sym((x, yy) => { ctx.strokeStyle = 'rgba(27,42,51,.75)'; ctx.lineWidth = .9; ctx.beginPath(); ctx.moveTo(x - 11, yy + 3); ctx.bezierCurveTo(x - 4, yy - 6, x + 4, yy + 6, x + 11, yy - 3); ctx.stroke(); }, 'Isolínea en cada límite de clase');
   if (S.conv.perimeter) sym((x, yy) => { ctx.setLineDash([6, 3]); ctx.strokeStyle = '#c0262d'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - 11, yy); ctx.lineTo(x + 11, yy); ctx.stroke(); ctx.setLineDash([]); }, 'Perímetro de estudio');
@@ -997,9 +1034,9 @@ function build(){
 }
 async function draw(def){
   await render(canvases[def.n], def, 0.8);
-  const n = activeRows().filter(r => isNum(valueOf(def, r))).length;
+  const n = def.mode === 'economy' ? 1 : activeRows().filter(r => isNum(valueOf(def, r))).length;
   const sat = useSat(def);
-  $('cnt-' + def.n).textContent = sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} mediciones en el periodo` : 'sin datos de campo en el periodo');
+  $('cnt-' + def.n).textContent = def.mode === 'economy' ? 'OSM · predios económicos' : (sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} mediciones en el periodo` : 'sin datos de campo en el periodo'));
   $('cv-' + def.n).classList.toggle('empty', !n && !sat);
 }
 async function drawAll(){
@@ -1043,7 +1080,7 @@ $('zipall').addEventListener('click', async () => {
     btn.textContent = 'Comprimiendo…';
     save(await zip.generateAsync({ type: 'blob' }), 'planos_humedales_kennedy.zip');
   } catch (e){ $('status').textContent = e.message; }
-  btn.textContent = 'Descargar los 21 (ZIP)'; btn.disabled = false;
+  btn.textContent = 'Descargar los 22 (ZIP)'; btn.disabled = false;
 });
 
 $('zipbare').addEventListener('click', async () => {
@@ -1054,7 +1091,7 @@ $('zipbare').addEventListener('click', async () => {
     btn.textContent = 'Comprimiendo…';
     save(await zip.generateAsync({ type: 'blob' }), 'planos_solos_humedales_kennedy.zip');
   } catch (e){ $('status').textContent = e.message; }
-  btn.textContent = '21 planos solos (ZIP)'; btn.disabled = false;
+  btn.textContent = '22 planos solos (ZIP)'; btn.disabled = false;
 });
 $('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
 $('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });
@@ -1086,7 +1123,7 @@ build();
 S.rows = parseCSV(window.MUESTREO || 'punto,lat,lon\n');
 setPill(true); renderSources();
 $('satrun').addEventListener('click', runSentinel);
-const setAll = v => { for (const d of V){ S.src[d.n] = v; const el = $('src-' + d.n); if (el) el.value = v; } drawAll(); };
+const setAll = v => { for (const d of V){ if (d.mode === 'economy') continue; S.src[d.n] = v; const el = $('src-' + d.n); if (el) el.value = v; } drawAll(); };
 $('allcampo').addEventListener('click', () => setAll('campo'));
 $('allsat').addEventListener('click', () => setAll('sat'));
 const onPeriod = () => { drawAll(); };
