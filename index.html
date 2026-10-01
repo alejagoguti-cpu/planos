@@ -412,7 +412,7 @@ function economyStats(){
     vals.push(n ? sum/n : NaN);
   }
   const good=vals.filter(v=>v===v).sort((a,b)=>a-b), q=p=>good.length ? good[Math.min(good.length-1,Math.floor((good.length-1)*p))] : NaN, q50=q(.5), q75=q(.75);
-  ECON.stats=vals.map(v=>v!==v?'sin dato':v>=q75?'alta':v>=q50?'media':'baja'); ECON.statsValues=vals; ECON.statsVersion=SAT.version; return ECON.stats;
+  const semanticHigh=ECON.features.map(f=>/(uso=(commercial|industrial)|edificio=(commercial|industrial|warehouse)|comercio=|actividad=|corabastos|mercado)/i.test(f.properties.reason||'')); ECON.stats=vals.map((v,k)=>v!==v?'sin dato':(semanticHigh[k]||v>=q75)?'alta':v>=q50?'media':'baja'); ECON.statsValues=vals; ECON.statsVersion=SAT.version; return ECON.stats;
 }
 function drawEconomy(ctx, def, {X, Y, P, C}){
   const peri = new Path2D(); P.forEach((p,i) => i ? peri.lineTo(X(p[0]),Y(p[1])) : peri.moveTo(X(p[0]),Y(p[1]))); peri.closePath();
@@ -483,7 +483,7 @@ async function render(canvas, def, k, opts = {}){
   if (def.mode === 'economy'){
     const E = await economyData(); ECON = E;
     const D = drawEconomy(ctx, def, {X, Y, P, C});
-    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'NDBI Sentinel-2 sobre máscara predial OSM', unit:'presión económica', stats:[['Alta',D.stats?`${D.high} predios rojos`:'esperando Sentinel-2'],['Media',D.stats?`${D.medium} predios sin relleno`:'—'],['Baja',D.stats?`${D.low} predios sin relleno`:'—']], srcTxt:D.stats?'Copernicus Sentinel-2 L2A (ESA), vía Earth Search; mediana multitemporal y NDBI por predio':'Esperando cálculo de Sentinel-2', method:D.stats?'NDBI = (SWIR1−NIR)/(SWIR1+NIR); cuantiles por predio; solo alta presión rellena en rojo':'Predios/huellas OSM como máscara, sin clasificación hasta completar Sentinel-2'}); } return;
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'NDBI Sentinel-2 sobre máscara predial OSM', unit:'presión económica', stats:[['Alta',D.stats?`${D.high} predios rojos`:'esperando Sentinel-2'],['Media',D.stats?`${D.medium} predios sin relleno`:'—'],['Baja',D.stats?`${D.low} predios sin relleno`:'—']], srcTxt:D.stats?'Copernicus Sentinel-2 L2A (ESA), vía Earth Search; mediana multitemporal y NDBI por predio':'Esperando cálculo de Sentinel-2', method:D.stats?'NDBI Sentinel-2 + etiqueta OSM de comercio/industria; cuantiles por predio; solo alta presión rellena en rojo':'Predios/huellas OSM como máscara, sin clasificación hasta completar Sentinel-2'}); } return;
   }
 
   // --- satellite mode
