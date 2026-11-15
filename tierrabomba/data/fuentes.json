@@ -1,0 +1,56 @@
+[
+ {
+  "id": "INVEMAR_ICAM_cuadros_2021",
+  "corto": "INVEMAR ICAM cuadros de salida 2021 (muestreo 2021)",
+  "titulo": "Cuadros de salidas o resultados ICAM 2021 (xlsx), Operación Estadística ICAM, INVEMAR",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/52c931ae9a63466dac0a4e7b359da8c1/data"
+ },
+ {
+  "id": "INVEMAR_ICAM_cuadros_2022",
+  "corto": "INVEMAR ICAM cuadros de salida 2022 (muestreo 2022)",
+  "titulo": "Cuadros de salidas o resultados ICAM 2022 (xlsx), Operación Estadística ICAM, INVEMAR",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/21f9dfcdcf75421db4a3328fe01c6894/data"
+ },
+ {
+  "id": "INVEMAR_ICAM_cuadros_2023",
+  "corto": "INVEMAR ICAM cuadros de salida 2023 (muestreo 2023)",
+  "titulo": "Cuadros de salidas o resultados ICAM 2023 (xlsx), Operación Estadística ICAM, INVEMAR",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/3453b499f97c43c7b0c7dae3c5ef8b0b/data"
+ },
+ {
+  "id": "INVEMAR_ICAM_cuadros_2024",
+  "corto": "INVEMAR ICAM cuadros de salida 2024 (muestreo 2024)",
+  "titulo": "Cuadros de salidas o resultados ICAM 2024 (xlsx), Operación Estadística ICAM, INVEMAR",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/2eaa4314340348a3a096e834c2297c4b/data"
+ },
+ {
+  "id": "INVEMAR_ICAM_cuadros_2025",
+  "corto": "INVEMAR ICAM cuadros de salida 2025 (muestreo 2025)",
+  "titulo": "Cuadros de salida ICAM 2025 (xlsx), Operación Estadística ICAM, INVEMAR",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/37eec98e5c534c68884812486a0d99d0/data"
+ },
+ {
+  "id": "INVEMAR_datos_icam_1996-2019",
+  "corto": "INVEMAR REDCAM/ICAM microdatos datos_icam (muestreos 1996-2019)",
+  "titulo": "datos_icam: microdatos REDCAM por estación y muestreo (xlsx, hub de datos abiertos ICAM, INVEMAR)",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/4a2f87c9367b42edab08dce471f7a5c2/data"
+ },
+ {
+  "id": "REDCAM_2022",
+  "corto": "INVEMAR Informe REDCAM 2022 (muestreo 2022)",
+  "titulo": "Informe Técnico REDCAM 2022: Diagnóstico y evaluación de la calidad de las aguas marinas y costeras del Caribe y Pacífico colombianos",
+  "url": "https://www.invemar.org.co/documents/37438/102725/Informe+REDCAM+2022.pdf/9ea74f54-64bb-cd70-4896-4faeddec18e6"
+ },
+ {
+  "id": "REDCAM_2023",
+  "corto": "INVEMAR Informe REDCAM 2023 (muestreo 2023)",
+  "titulo": "Informe Técnico REDCAM 2023: Diagnóstico y evaluación de la calidad de las aguas marinas y costeras del Caribe y Pacífico colombianos",
+  "url": "https://www.invemar.org.co/documents/37438/102725/Informe+REDCAM+2023.pdf/eb6ac529-3faf-b59e-2439-a10768dd0691"
+ },
+ {
+  "id": "REDCAM_2025",
+  "corto": "INVEMAR Informe REDCAM 2025 (muestreo 2025)",
+  "titulo": "Informe Técnico REDCAM 2025: Diagnóstico y evaluación de la calidad de las aguas marinas y costeras del Caribe y Pacífico colombianos",
+  "url": "https://www.invemar.org.co/documents/37438/102725/Informe+t%C3%A9cnico+REDCAM+2025.pdf/8cc93f01-73af-10dd-5aff-05d5444e37b1"
+ }
+]

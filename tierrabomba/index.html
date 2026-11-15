@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planos hídricos Tierra Bomba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --sunk:#E7ECE6; --ink:#17201B; --muted:#58645C; --line:#D4DBD3;
+  --accent:#1F5E7A; --accent-ink:#FFFFFF; --ok:#2E7D4F; --warn:#9A6A12;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101513; --surface:#171E1A; --sunk:#1F2822; --ink:#E1E8E3; --muted:#97A39A; --line:#2A352E;
+    --accent:#6FB6D6; --accent-ink:#0B1A21; --ok:#6CC08F; --warn:#E0B055;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101513; --surface:#171E1A; --sunk:#1F2822; --ink:#E1E8E3; --muted:#97A39A; --line:#2A352E;
+  --accent:#6FB6D6; --accent-ink:#0B1A21; --ok:#6CC08F; --warn:#E0B055;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:24px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:6px}
+h1{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--cond);font-weight:600;font-size:18px;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:75ch;margin:0}
+a{color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:flex;flex-direction:column;gap:5px}
+label,.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+select,input[type="number"],input[type="date"]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px}
+button,.btn{font:inherit;font-weight:600;font-size:13px;border-radius:5px;padding:7px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.ghost,.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 9px;border-radius:99px;background:var(--sunk)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.pill.warn i{background:var(--warn)}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.cover{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.cover a{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);font-size:12.5px;background:var(--bg);min-width:0}
+.cover a span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cover a b{font-family:var(--mono);font-weight:500;font-size:11px;color:var(--muted)}
+.sw{width:22px;height:10px;border-radius:2px;flex:none}
+.cover a.empty{opacity:.55}
+.cards{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;scroll-margin-top:12px}
+.card canvas{display:block;width:100%;height:auto;background:#f7f7f4}
+.card .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--line)}
+.card .bar .left{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+.card .bar .t{font-weight:600}
+.card .bar .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.convs{display:flex;flex-wrap:wrap;gap:6px 16px}
+.convs label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer}
+.hint{font-size:12.5px;color:var(--muted);margin:0;max-width:80ch}
+.sources{font-size:12.5px;color:var(--muted);margin:0;padding-left:18px}
+.sources li{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Planos hídricos · Tierra Bomba</h1>
+    <p class="lede">Veintidós planos temáticos de calidad y cantidad de agua, incluido uno de residuos plásticos, para la isla de Tierra Bomba (Cartagena de Indias, Bolívar) y sus aguas costeras: Bocachica, Caño del Oro, Punta Arena, el poblado de Tierra Bomba, la bahía interna y la costa abierta, además de las lagunas, la ciénaga y el manglar de la isla. Los datos de campo son de la red REDCAM del INVEMAR (1996–2025). Cada plano tiene su propia rampa de color y se descarga como imagen PNG lista para informe.</p>
+    <p class="lede"><a href="../">← Planos hídricos de Kennedy (Bogotá)</a></p>
+    <p class="lede"><a href="ndvi.html">Herramienta NDVI Sentinel-2 con filtro Savitzky-Golay →</a></p>
+  </header>
+
+  <section class="panel">
+    <div class="ctl" style="justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <span class="pill" id="datapill"><i></i><span id="datalabel">Cargando datos…</span></span>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="ctl">
+        <button type="button" id="zipall" disabled>Descargar los 22 (ZIP)</button>
+        <button type="button" class="ghost" id="zipbare" disabled>22 planos solos (ZIP)</button>
+        <label class="btn ghost" for="csvfile">Cargar CSV propio</label>
+        <input type="file" id="csvfile" accept=".csv,text/csv" hidden>
+        <label class="btn ghost" for="kmlfile">Cambiar perímetro (KML)</label>
+        <input type="file" id="kmlfile" accept=".kml,.geojson,.json" hidden>
+        <a class="btn ghost" href="data/muestreo_real.csv" download>Descargar datos CSV</a>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="field"><label for="base">Mapa base</label>
+        <select id="base"><option value="carto">Gris claro (Esri)</option><option value="osm">Calles (OpenStreetMap)</option><option value="sat">Satélite (Esri)</option><option value="none">Sin mapa base</option></select></div>
+      <div class="field"><label for="meth">Superficie</label>
+        <select id="meth"><option value="idw" selected>Zonas IDW por clases</option><option value="thiessen">Polígonos de Thiessen</option></select></div>
+      <div class="field"><label for="pw">Interpolación IDW · potencia</label>
+        <select id="pw"><option>1</option><option selected>2</option><option>3</option></select></div>
+      <div class="field"><label for="res">Resolución PNG</label>
+        <select id="res"><option value="1.5">2250 × 1500 px</option><option value="2">3000 × 2000 px</option><option value="3">4500 × 3000 px</option><option value="5.12" selected>8K · 7680 × 5120 px</option></select></div>
+      <div class="field"><label for="p0">Periodo de muestreo · desde</label><input type="date" id="p0"></div>
+      <div class="field"><label for="p1">hasta</label><input type="date" id="p1"></div>
+      <button type="button" class="ghost" id="pall">Todo el periodo</button>
+    </div>
+    <div class="field">
+      <span class="lbl">Convenciones</span>
+      <div class="convs" id="convs"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ctl" style="justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0;max-width:70ch">
+        <h2>Copernicus Sentinel-2</h2>
+        <p class="hint">Composición mediana de escenas Sentinel-2 L2A sin nubes (máscara SCL) a 10 m (bandas de 20 m remuestreadas). Mediana por banda (B2, B3, B4, B5, B6, B8, B11, B12) y un índice espectral por plano: MNDWI (agua), FDI (residuos plásticos flotantes, solo sobre el mar y las lagunas), NDCI (clorofila), NDTI y B4 (turbiedad y sólidos), Stumpf (profundidad), SI (salinidad), NDBI (superficie construida), AWEI, BSI, NDVI, SAVI, NDMI, MSI, GNDVI y relaciones de bandas. Salvo el MNDWI del plano 16, son indicadores relativos sin calibrar: muestran la variación espectral asociada a la variable, no su valor medido. Cada plano elige su fuente con el selector «Fuente».</p>
+        <span class="status" id="satstatus">Esperando…</span>
+      </div>
+      <div class="ctl">
+        <div class="field"><label for="sd0">Desde</label><input type="date" id="sd0" value="2025-11-15"></div>
+        <div class="field"><label for="sd1">Hasta</label><input type="date" id="sd1" value="2026-11-15"></div>
+        <div class="field"><label for="sres">Píxel</label><select id="sres"><option value="10" selected>10 m</option><option value="20">20 m</option></select></div>
+        <div class="field"><label for="sn">Escenas</label><select id="sn"><option>6</option><option selected>10</option><option>16</option></select></div>
+        <button type="button" id="satrun">Recalcular</button>
+        <div class="field"><span class="lbl">Fuente en los 22 planos</span><div class="btns" style="display:flex;gap:6px"><button type="button" class="ghost" id="allcampo">Campo</button><button type="button" class="ghost" id="allsat">Sentinel-2</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="cover" id="cover" aria-label="Índice de planos"></nav>
+  <div class="cards" id="cards"></div>
+
+  <section class="panel">
+    <h2>Fuentes</h2>
+    <ul class="sources" id="fuentes"></ul>
+    <p class="hint">Línea de costa, lagunas, ciénaga y manglar: OpenStreetMap (© colaboradores de OpenStreetMap, ODbL). Perímetro: perimetro_tierrabomba.kml (isla y aguas costeras). Los valores por punto vienen de <code>data/muestreo_real.csv</code>; cada fila indica su fuente y la hoja, tabla o página del documento. Las celdas vacías significan que la fuente no reporta esa variable. Los valores censurados (&lt;1, &lt;4,23) se interpolan con el límite reportado y se rotulan tal como vienen. Si un punto tiene varias mediciones en el periodo elegido, se promedian; usa «Periodo de muestreo» para comparar épocas.</p>
+    <p class="hint">Superficies: IDW con todos los puntos (o polígonos de Thiessen) sobre el agua del perímetro (mar, bahía, lagunas y manglar; con «Solo agua» apagado, sobre todo el perímetro), representadas en clases por cuantiles con colores sólidos e isolíneas en cada límite de clase, sin suavizado. Los índices Sentinel-2 se dibujan píxel a píxel a 10 m sobre todo el perímetro. La textura de los planos de campo es el brillo real de la superficie en Sentinel-2 (10 m) usado solo como sombreado; el color y la clase vienen únicamente de los datos medidos. Cada convención (mapa base, textura, solo agua, isolíneas, puntos, valores, lagunas, línea de costa, nombres, perímetro, coordenadas, norte y escala) se prende o apaga en «Convenciones» y así sale en el PNG.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.15.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script src="data.js"></script>
+<script>
+(() => {
+// ---------------- definitions ----------------
+const V = [
+  {n:1, t:'pH del agua', v:'pH por punto de muestreo', u:'unidades de pH', col:'ph', dec:2,
+   d:'Permite localizar zonas con cambios en acidez/alcalinidad y comparar las estaciones REDCAM alrededor de la isla (agua marina y estuarina, pH típico 7,8–8,6).',
+   ramp:['#fde0ef','#f768a1','#ae017e','#49006a']},
+  {n:2, t:'Eutrofización', v:'DBO5 + DQO + N + P', u:'mg/L', dec:1, calc:r=>sum([r.dbo5,r.dqo,r.ntk,r.p_total]),
+   d:'Identifica zonas con alta carga orgánica y nutrientes asociados a procesos eutróficos (suma de DBO5, DQO, NTK y fósforo total). La REDCAM no mide DQO, NTK ni fósforo total en estas estaciones, así que la suma queda sin dato.',
+   ramp:['#ffffcc','#addd8e','#41ab5d','#004529']},
+  {n:3, t:'Oxígeno disuelto', v:'OD', u:'mg/L', col:'od', dec:2,
+   d:'Muestra dónde el agua tiene menor disponibilidad de oxígeno para organismos acuáticos; contrástalo con DBO/DQO.',
+   ramp:['#eff3ff','#6baed6','#2171b5','#08306b']},
+  {n:4, t:'Fósforo total', v:'P total', u:'mg/L', col:'p_total', dec:2,
+   d:'Variable directa para estudiar enriquecimiento de nutrientes. La REDCAM mide ortofosfatos (µg/L), no fósforo total; esos valores están en la columna «referencia» del CSV y no se mezclan aquí.',
+   ramp:['#fff5eb','#fdae6b','#e6550d','#7f2704']},
+  {n:5, t:'Nitrógeno total y amoniacal', v:'NTK / NH₄', u:'mg/L', col:'ntk', dec:1, alt:{label:'Variable', opts:[['ntk','NTK (N total Kjeldahl)'],['nh4','NH₄ (N amoniacal)']]},
+   d:'Localiza entradas de materia nitrogenada. La REDCAM mide nitratos y nitritos (µg/L, en «referencia»), no NTK; el amonio solo se publica en gráficas.',
+   ramp:['#fcfbfd','#bcbddc','#756bb1','#3f007d']},
+  {n:6, t:'DQO', v:'Demanda Química de Oxígeno', u:'mg/L', col:'dqo', dec:0,
+   d:'Carga oxidable total del agua.',
+   ramp:['#fff5f0','#fb6a4a','#cb181d','#67000d']},
+  {n:7, t:'DBO5', v:'Demanda Bioquímica de Oxígeno', u:'mg/L', col:'dbo5', dec:0,
+   d:'Cuantifica la carga orgánica biodegradable. Compárala con la DQO para ver qué tipo de contaminación domina.',
+   ramp:['#fcf8e3','#e8c547','#a07c00','#3d2f00']},
+  {n:8, t:'Relación DBO/DQO', v:'DBO ÷ DQO', u:'adimensional', dec:2, calc:r=>(isNum(r.dbo5)&&isNum(r.dqo)&&r.dqo>0)?r.dbo5/r.dqo:NaN,
+   d:'Caracteriza la biodegradabilidad de la carga orgánica.',
+   ramp:['#f6eff7','#67a9cf','#02818a','#014636']},
+  {n:9, t:'Turbiedad', v:'NTU/UNT', u:'UNT', col:'turbiedad', dec:1,
+   d:'Detecta material suspendido y entradas por escorrentía.',
+   ramp:['#f6efe6','#d2a679','#8c5a2b','#3b2410']},
+  {n:10, t:'Sólidos suspendidos totales', v:'SST', u:'mg/L', col:'sst', dec:0,
+   d:'Indica carga particulada y sedimentaria; útil para relacionar la pluma del Canal del Dique, la escorrentía y el oleaje con la calidad del agua.',
+   ramp:['#f7f7f7','#bdbdbd','#636363','#1f1f1f']},
+  {n:11, t:'Conductividad eléctrica', v:'conductividad', u:'µS/cm', col:'conductividad', dec:0,
+   d:'Muestra cambios en la concentración de sales y aportes de agua dulce. En el mar la REDCAM mide salinidad, que solo publica en gráficas.',
+   ramp:['#f7fcf0','#7bccc4','#2b8cbe','#084081']},
+  {n:12, t:'Grasas y aceites', v:'concentración', u:'mg/L', col:'grasas_aceites', dec:1,
+   d:'Externalidad concreta del tráfico de embarcaciones, el puerto y los muelles turísticos de la bahía. Ninguna fuente revisada reporta grasas y aceites en estas estaciones; la REDCAM mide hidrocarburos (HPDD), anotados en «referencia».',
+   ramp:['#fee838','#a59c74','#575d6d','#00224e']},
+  {n:13, t:'Coliformes fecales', v:'termotolerantes', u:'NMP/100 mL', col:'coliformes_fecales', dec:0, log:true,
+   d:'Detecta contaminación microbiológica y posibles aportes sanitarios (la isla no tiene alcantarillado). Escala logarítmica. Coliformes termotolerantes en NMP/100 mL (INVEMAR REDCAM).',
+   ramp:['#fcfdbf','#fc8961','#b73779','#51127c','#000004']},
+  {n:14, t:'Coliformes totales', v:'totales', u:'NMP/100 mL', col:'coliformes_totales', dec:0, log:true,
+   d:'Complementa el anterior y permite mapear presión sanitaria. Escala logarítmica, NMP/100 mL. Solo hay datos de 2025 en la estación F. Emisario.',
+   ramp:['#f0f921','#f89540','#cc4778','#7e03a8','#0d0887']},
+  {n:15, t:'Profundidad de lámina de agua', v:'profundidad', u:'m', col:'profundidad', dec:2,
+   d:'Relaciona hidrología con hábitat, concentración de contaminantes y estacionalidad en las lagunas de la isla. Ninguna fuente revisada la reporta.',
+   ramp:['#ffffd9','#7fcdbb','#1d91c0','#081d58']},
+  {n:16, t:'Área inundada', v:'superficie de agua de lagunas y manglar', u:'ha', col:'area_inundada', dec:2,
+   d:'Superficie de agua libre de las lagunas, la ciénaga y el manglar de la isla; cambia entre época seca y de lluvias.',
+   ramp:['#fde725','#5ec962','#21918c','#3b528b','#440154']},
+  {n:17, t:'Nivel freático', v:'profundidad del nivel freático', u:'m', col:'nivel_freatico', dec:2,
+   d:'Ayuda a explicar la relación entre acuífero, cuña salina y lagunas de la isla. No se encontraron mediciones de pozos georreferenciadas.',
+   ramp:['#f7fcfd','#9ebcda','#8c6bb1','#4d004b']},
+  {n:18, t:'Vertimientos', v:'puntos de vertimiento identificados', u:'vertimientos', col:'conexiones', dec:0,
+   d:'Espacializa las posibles fuentes, no solo los efectos. La isla no tiene alcantarillado y no se encontró un inventario georreferenciado de vertimientos, así que queda sin dato.',
+   ramp:['#fef3c7','#f59e0b','#b91c1c','#1c1917']},
+  {n:19, t:'Caudal de entrada', v:'caudal de entrada', u:'L/s', col:'caudal', dec:0,
+   d:'Relaciona entradas hídricas con dilución o concentración de contaminantes. Ninguna fuente reporta caudales de entrada medidos para la isla o sus lagunas.',
+   ramp:['#e0f7fa','#4dd0e1','#00838f','#002b2e']},
+  {n:20, t:'Carga contaminante', v:'concentración × caudal', u:'kg/día', dec:1, alt:{label:'Concentración', opts:[['dbo5','DBO5'],['dqo','DQO'],['sst','SST'],['p_total','P total'],['ntk','NTK'],['grasas_aceites','Grasas y aceites']]},
+   calcAlt:(r,c)=>(isNum(r[c])&&isNum(r.caudal))?r[c]*r.caudal*0.0864:NaN,
+   d:'Cuánto contaminante entra al sistema: concentración (mg/L) × caudal (L/s) × 0,0864. Solo se calcula donde una misma fila trae concentración y caudal; en las fuentes actuales no hay caudales, así que queda sin dato.',
+   ramp:['#30123b','#4686fb','#1ae4b6','#a2fc3c','#faba39','#e4460a','#7a0403']},
+  {n:21, t:'Residuos plásticos y sólidos', v:'microplásticos en arena de playa (REDCAM)', u:'ítems/m²', col:'residuos_solidos', dec:0,
+   d:'Presión por residuos sólidos, en buena parte plásticos. En campo: microplásticos en la arena de las playas de Punta Arena y Castillogrande (INVEMAR REDCAM 2022–2025, ítems/m²); no hay tonelaje de residuos por sector. Con Sentinel-2, el FDI resalta acumulaciones flotantes densas (≥30 % del píxel); sedimentos, sargazo y vegetación también lo elevan.',
+   ramp:['#f2f0f7','#9ecae1','#4292c6','#e6550d','#7f2704']},
+  {n:22, t:'P · Presión económica', v:'predios/huellas con actividad económica', u:'clasificación', mode:'economy',
+   d:'Localiza la concentración de presión económica en la isla: turismo, comercio, canteras e industria. Clasifica la presión con NDBI de Sentinel-2 como proxy de superficie construida: alta, media o baja. Los polígonos solo funcionan como máscara predial; la lámina final rellena únicamente los predios de presión alta en rojo y deja el resto sin relleno.',
+   ramp:['#ffffff','#d73027']}
+];
+// coastal sectors (column «humedal» of the CSV) in display order; others found in the data are appended
+const SECTORES = window.SECTORES || ['Tierra Bomba (norte)', 'Punta Arena', 'Caño del Oro', 'Bocachica', 'Bahía interna', 'Mar abierto'];
+// water bodies inside the island (OSM): lagoons, marsh and mangrove, grouped by name
+const grupos = () => [...new Set(S.hum.features.map(f => f.properties.humedal))];
+// label anchor for a water-body group: window.ETIQUETAS[group] = [lon, lat, align] or top-centre of its features
+function groupLabel(grp, X, Y){
+  const e = (window.ETIQUETAS || {})[grp];
+  if (e) return { x: X(e[0]), y: Y(e[1]), align: e[2] || 'center' };
+  const cs = S.hum.features.filter(f => f.properties.humedal === grp).flatMap(f => rings(f.geometry).flat());
+  return { x: (Math.min(...cs.map(c => X(c[0]))) + Math.max(...cs.map(c => X(c[0])))) / 2, y: Math.min(...cs.map(c => Y(c[1]))) - 12, align: 'center' };
+}
+function sectors(){ const s = new Set(S.rows.map(featureOf)); return [...SECTORES.filter(x => s.has(x)), ...[...s].filter(x => !SECTORES.includes(x))]; }
+const NUMCOLS = ['lat','lon','ph','od','p_total','ntk','nh4','dqo','dbo5','turbiedad','sst','conductividad','grasas_aceites','coliformes_fecales','coliformes_totales','profundidad','area_inundada','nivel_freatico','conexiones','caudal','residuos_solidos'];
+
+function isNum(x){ return typeof x === 'number' && isFinite(x); }
+function sum(a){ return a.every(isNum) ? a.reduce((s,x)=>s+x,0) : NaN; }
+const $ = id => document.getElementById(id);
+
+// ---------------- state ----------------
+const S = {
+  rows: [], dataName: 'data/muestreo_real.csv', fuentes: window.FUENTES || [],
+  perim: window.PERIMETRO, hum: window.HUMEDALES, land: window.TIERRA || { type: 'FeatureCollection', features: [] },
+  base: 'carto', method: 'idw', pw: 2, conv: { base: true, texture: true, water: true, iso: true, points: true, labels: true, wetlands: true, coast: true, names: true, perimeter: true, grid: true, north: true, scale: true }, alt: {5:'ntk', 20:'dbo5'}, src: Object.fromEntries(Array.from({ length: 22 }, (_, i) => [i + 1, (i + 1 === 16 || i + 1 === 20 || i + 1 === 21) ? 'sat' : 'campo']))
+};
+
+// ---------------- CSV ----------------
+function parseCSV(text){
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0];
+  const delim = (first.split(';').length > first.split(',').length) ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === delim){ row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r'){ if (c === '\r' && text[i+1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell || row.length){ row.push(cell); rows.push(row); }
+  const head = rows.shift().map(h => h.trim().toLowerCase());
+  return rows.filter(r => r.some(c => c.trim())).map(r => {
+    const o = {};
+    head.forEach((h, i) => {
+      let v = (r[i] ?? '').trim();
+      if (NUMCOLS.includes(h)){
+        v = v.replace(/\s/g,''); if (delim === ';') v = v.replace(',', '.');
+        const m = v.match(/^([<>])(.*)$/);           // censored value, e.g. <0.28 or >5700
+        if (m){ o[h + '_txt'] = m[1] + m[2]; v = m[2]; }
+        o[h] = v === '' ? NaN : +v;
+      }
+      else o[h] = v;
+    });
+    return o;
+  }).filter(o => isNum(o.lat) && isNum(o.lon));
+}
+function parseKML(text){
+  if (text.trim().startsWith('{')){
+    const g = JSON.parse(text); const f = g.type === 'FeatureCollection' ? g.features[0] : g;
+    const geom = f.geometry || f; const c = geom.type === 'Polygon' ? geom.coordinates[0] : geom.coordinates[0][0];
+    return c.map(p => [p[0], p[1]]);
+  }
+  const m = text.match(/<coordinates>([\s\S]*?)<\/coordinates>/);
+  if (!m) throw new Error('El archivo no tiene un polígono con <coordinates>.');
+  return m[1].trim().split(/\s+/).map(s => s.split(',').map(Number)).map(p => [p[0], p[1]]);
+}
+
+// ---------------- geometry ----------------
+const TILE = 256;
+const mx = (lon, z) => (lon + 180) / 360 * TILE * 2 ** z;
+const my = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * TILE * 2 ** z; };
+const rings = g => g.type === 'Polygon' ? [g.coordinates[0]] : g.coordinates.map(p => p[0]);
+function pip(x, y, r){ let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++){ const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+function featureOf(row){
+  const h = String(row.humedal || '').trim();
+  if (h) return h;
+  for (const f of S.hum.features) if (rings(f.geometry).some(r => pip(row.lon, row.lat, r))) return f.properties.humedal;
+  return 'Sin sector';
+}
+
+// ---------------- classes ----------------
+function niceNum(x){ const e = 10 ** Math.floor(Math.log10(x)), f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; }
+function round2(v){ if (v === 0) return 0; const e = 10 ** (Math.floor(Math.log10(Math.abs(v))) - 1); return Math.round(v / e) * e; }
+// class edges covering [lo, hi]; in log space for coliforms (edges are log10 values)
+function classBreaks(lo, hi, log){
+  if (log){
+    const n = Math.max(3, Math.min(6, Math.ceil(hi - lo) + 1));
+    const e = Array.from({ length: n + 1 }, (_, i) => Math.log10(Math.max(1, round2(10 ** (lo + (hi - lo) * i / n)))));
+    e[0] = Math.min(e[0], lo); e[n] = Math.max(e[n], hi);
+    return [...new Set(e)];
+  }
+  if (hi - lo < 1e-12) return [lo - .5, hi + .5];
+  const step = niceNum((hi - lo) / 6), a = Math.floor(lo / step) * step, out = [];
+  for (let v = a; v < hi + step * .999; v += step) out.push(+v.toPrecision(12));
+  if (out[out.length - 1] < hi) out.push(out[out.length - 1] + step);
+  return out;
+}
+// quantile classes (up to 5) from the sample values; interior edges rounded to 2 significant figures
+function quantBreaks(tv, log){
+  const v = [...tv].sort((a, b) => a - b), n = Math.min(5, v.length);
+  if (v[0] === v[v.length - 1]) return [v[0] - .5, v[0] + .5];
+  const q = p => { const i = (v.length - 1) * p, a = Math.floor(i); return v[a] + (v[Math.min(v.length - 1, a + 1)] - v[a]) * (i - a); };
+  const r = x => log ? Math.log10(Math.max(1, round2(10 ** x))) : round2(x);
+  const e = [v[0]];
+  for (let i = 1; i < n; i++){ const x = r(q(i / n)); if (x > e[e.length - 1] && x < v[v.length - 1]) e.push(x); }
+  e.push(v[v.length - 1]);
+  return e;
+}
+function classOfValue(cls, v){ let i = 0; while (i < cls.length - 1 && v >= cls[i + 1].a) i++; return i; }
+
+// ---------------- color ----------------
+const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+function rampFn(stops){
+  const c = stops.map(hex);
+  return u => { u = Math.max(0, Math.min(1, u)) * (c.length - 1); const i = Math.min(c.length - 2, Math.floor(u)), f = u - i; return [0,1,2].map(k => Math.round(c[i][k] + (c[i+1][k] - c[i][k]) * f)); };
+}
+const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;
+
+// ---------------- period ----------------
+function rowSpan(r){
+  const f = String(r.fecha || '');
+  const ds = f.match(/\d{4}(?:-(?:0[1-9]|1[0-2])(?:-[0-3]\d)?)?(?!\d)/g);
+  if (!ds) return null;
+  const lo = ds[0], hi = ds[ds.length - 1];
+  const lastDay = ym => String(new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate()).padStart(2, '0');
+  const start = lo.length === 4 ? lo + '-01-01' : lo.length === 7 ? lo + '-01' : lo;
+  const end = hi.length === 4 ? hi + '-12-31' : hi.length === 7 ? hi + '-' + lastDay(hi) : hi;
+  return [start, end];
+}
+function activeRows(){
+  const a = $('p0').value || '0000-01-01', b = $('p1').value || '9999-12-31';
+  return S.rows.filter(r => { const sp = rowSpan(r); return !sp || (sp[1] >= a && sp[0] <= b); });
+}
+function dataSpan(){
+  const sp = S.rows.map(rowSpan).filter(Boolean);
+  if (!sp.length) return ['', ''];
+  return [sp.map(s => s[0]).sort()[0], sp.map(s => s[1]).sort().pop()];
+}
+function periodText(){
+  const a = $('p0').value, b = $('p1').value;
+  return a || b ? `Periodo ${a || '…'} a ${b || '…'}` : 'Todo el periodo';
+}
+
+// ---------------- values ----------------
+function valueOf(def, r){
+  if (def.calcAlt) return def.calcAlt(r, S.alt[def.n]);
+  if (def.calc) return def.calc(r);
+  const col = def.alt ? S.alt[def.n] : def.col;
+  return r[col];
+}
+function unitOf(def){ return def.u; }
+function subOf(def){
+  if (def.n === 5) return S.alt[5] === 'nh4' ? 'NH₄ · nitrógeno amoniacal' : 'NTK · nitrógeno total Kjeldahl';
+  if (def.n === 20){ const o = def.alt.opts.find(o => o[0] === S.alt[20]); return `${o[1]} × caudal`; }
+  return def.v;
+}
+function fmt(v, dec){
+  if (!isNum(v)) return '–';
+  if (Math.abs(v) >= 1e5){ const [m, e] = v.toExponential(1).split('e+'); return m.replace('.', ',') + '×10' + [...e].map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join(''); }
+  return v.toLocaleString('es-CO', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+// ---------------- tiles ----------------
+const BASES = {
+  carto: { url: (z,x,y) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${z}/${y}/${x}`, attr: 'Mapa base: Esri, HERE, Garmin, © OpenStreetMap', max: 16 },
+  osm: { url: (z,x,y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`, attr: 'Mapa base © colaboradores de OpenStreetMap', max: 19 },
+  sat: { url: (z,x,y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`, attr: 'Imagen: Esri, Maxar, Earthstar Geographics', max: 19 },
+  none: null
+};
+const tileCache = new Map();
+function tile(url){
+  if (!tileCache.has(url)) tileCache.set(url, new Promise(res => {
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => res(im); im.onerror = () => res(null); im.src = url;
+  }));
+  return tileCache.get(url);
+}
+
+// ---------------- render ----------------
+let ECON = null;
+async function economyData(){
+  if (!ECON) ECON = fetch('data/presion_economica.geojson').then(r => { if (!r.ok) throw new Error('No se pudo cargar la capa predial.'); return r.json(); });
+  return ECON;
+}
+function economyStats(){
+  if (!SAT.ready) return null;
+  if (ECON.statsVersion === SAT.version) return ECON.stats;
+  const A = satIdx('ndbi'), {W,H,res,ub} = SAT, inv = proj4(SAT.def, 'EPSG:4326'), vals = [];
+  if (!SAT.cellLL || SAT.cellLLVersion !== SAT.version){ SAT.cellLL = new Float64Array(W*H*2); for(let j=0;j<H;j++) for(let i=0;i<W;i++){ const ll=inv.forward([ub[0]+(i+.5)*res,ub[3]-(j+.5)*res]); const q=(j*W+i)*2; SAT.cellLL[q]=ll[0]; SAT.cellLL[q+1]=ll[1]; } SAT.cellLLVersion=SAT.version; }
+  const feats = ECON.features || [];
+  for (const f of feats){
+    const ringsF = f.geometry.type === 'Polygon' ? [f.geometry.coordinates[0]] : f.geometry.coordinates.map(p => p[0]);
+    const flat = ringsF.flat(), bx=[Math.min(...flat.map(c=>c[0])),Math.min(...flat.map(c=>c[1])),Math.max(...flat.map(c=>c[0])),Math.max(...flat.map(c=>c[1]))];
+    const ec=flat.map(c=>proj4('EPSG:4326',SAT.def,c)), ex=[Math.max(0,Math.floor((Math.min(...ec.map(c=>c[0]))-ub[0])/res)-1),Math.min(W-1,Math.ceil((Math.max(...ec.map(c=>c[0]))-ub[0])/res)+1)], ey=[Math.max(0,Math.floor((ub[3]-Math.max(...ec.map(c=>c[1])))/res)-1),Math.min(H-1,Math.ceil((ub[3]-Math.min(...ec.map(c=>c[1])))/res)+1)];
+    let sum=0,n=0;
+    for(let j=ey[0];j<=ey[1];j++) for(let i=ex[0];i<=ex[1];i++){ const q=(j*W+i)*2,llx=SAT.cellLL[q],lly=SAT.cellLL[q+1]; if(llx<bx[0]||llx>bx[2]||lly<bx[1]||lly>bx[3]) continue; if(ringsF.some(r=>pip(llx,lly,r))){const v=A[j*W+i]; if(v===v){sum+=v;n++;}} }
+    vals.push(n ? sum/n : NaN);
+  }
+  const good=vals.filter(v=>v===v).sort((a,b)=>a-b), q=p=>good.length ? good[Math.min(good.length-1,Math.floor((good.length-1)*p))] : NaN, q50=q(.5), q75=q(.75);
+  const semanticHigh=ECON.features.map(f=>/(uso=(commercial|industrial|quarry)|edificio=(commercial|industrial|warehouse|retail|hotel|supermarket)|comercio=|actividad=|turismo=|ocio=|mercado)/i.test(f.properties.reason||'')); ECON.stats=vals.map((v,k)=>v!==v?'sin dato':(semanticHigh[k]||v>=q75)?'alta':v>=q50?'media':'baja'); ECON.statsValues=vals; ECON.statsVersion=SAT.version; return ECON.stats;
+}
+function drawEconomy(ctx, def, {X, Y, P, C}){
+  const peri = new Path2D(); P.forEach((p,i) => i ? peri.lineTo(X(p[0]),Y(p[1])) : peri.moveTo(X(p[0]),Y(p[1]))); peri.closePath();
+  ctx.save(); ctx.clip(peri);
+  const features = ECON.features || [], stats = economyStats();
+  for (let k=0;k<features.length;k++){
+    const f=features[k], rr=f.geometry.type==='Polygon'?[f.geometry.coordinates[0]]:f.geometry.coordinates.map(p=>p[0]), path=new Path2D();
+    for(const r of rr){r.forEach((c,i)=>i?path.lineTo(X(c[0]),Y(c[1])):path.moveTo(X(c[0]),Y(c[1])));path.closePath();}
+    const high=stats && stats[k]==='alta';
+    ctx.fillStyle=high?'rgba(215,48,39,.84)':'rgba(255,255,255,0)'; ctx.fill(path);
+    ctx.strokeStyle=high?'#a50f15':'rgba(92,103,96,.55)'; ctx.lineWidth=high?1.3:.65; ctx.stroke(path);
+  }
+  ctx.restore();
+  return {features, stats, high:stats?stats.filter(x=>x==='alta').length:0, medium:stats?stats.filter(x=>x==='media').length:0, low:stats?stats.filter(x=>x==='baja').length:0};
+}
+// logical layout 1500 x 1000: map 1000x1000 on the left, sheet panel 500 wide on the right
+const LW = 1500, LH = 1000, MW = 1000;
+async function render(canvas, def, k, opts = {}){
+  const bare = !!opts.bare;                       // map only: no sheet, frame, symbols, labels or basemap
+  const C = bare ? { texture: S.conv.texture, water: S.conv.water } : S.conv, baseKey = bare ? 'none' : S.base;
+  canvas.width = Math.round((bare ? MW : LW) * k); canvas.height = Math.round(LH * k);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  if (!bare){ ctx.fillStyle = '#F7F7F4'; ctx.fillRect(0, 0, LW, LH); }
+
+  // --- view
+  const P = S.perim;
+  const lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+  const b = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+  const pad = 84, z0 = 0;
+  const wx = mx(b[2], z0) - mx(b[0], z0), wy = my(b[1], z0) - my(b[3], z0);
+  const zf = Math.log2(Math.min((MW - 2 * pad) / wx, (LH - 2 * pad) / wy));
+  const cx = (mx(b[0], zf) + mx(b[2], zf)) / 2, cy = (my(b[1], zf) + my(b[3], zf)) / 2;
+  const X = lon => mx(lon, zf) - cx + MW / 2, Y = lat => my(lat, zf) - cy + LH / 2;
+  const latC = (b[1] + b[3]) / 2;
+  const mpp = 156543.03392 * Math.cos(latC * Math.PI / 180) / 2 ** zf; // meters per logical px
+
+  // --- basemap
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.clip();
+  const B = BASES[baseKey];
+  if (B && C.base){
+    const zt = Math.min(B.max, 17, Math.ceil(zf + Math.log2(k)));
+    const sc = 2 ** (zf - zt);
+    const x0 = Math.floor((cx - MW / 2) / sc / TILE), x1 = Math.floor((cx + MW / 2) / sc / TILE);
+    const y0 = Math.floor((cy - LH / 2) / sc / TILE), y1 = Math.floor((cy + LH / 2) / sc / TILE);
+    const jobs = [];
+    for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) jobs.push(tile(B.url(zt, tx, ty)).then(im => ({ im, tx, ty })));
+    const got = await Promise.all(jobs);
+    for (const { im, tx, ty } of got) if (im) ctx.drawImage(im, tx * TILE * sc - cx + MW / 2, ty * TILE * sc - cy + LH / 2, TILE * sc + 0.5, TILE * sc + 0.5);
+    if (baseKey !== 'sat'){ ctx.fillStyle = 'rgba(247,247,244,0.25)'; ctx.fillRect(0, 0, MW, LH); }
+  }
+  // mask outside perimeter
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH);
+  P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])));
+  ctx.closePath();
+  if (!bare){ ctx.fillStyle = 'rgba(236,238,233,0.82)'; ctx.fill('evenodd'); }
+
+  const finish = () => {
+    if (C.grid) frame(ctx, { zf, cx, cy });
+    if (C.north) northArrow(ctx, MW - FR - 44, FR + 46);
+    if (C.scale) scaleBar(ctx, FR + 24, LH - FR - 26, mpp);
+    ctx.fillStyle = '#4a5550'; ctx.font = '11px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText((B ? B.attr : '') + (useSat(def) ? ' · Contiene datos Copernicus Sentinel-2 modificados' : ''), MW - FR - 8, LH - FR - 8);
+  };
+
+  // --- economic pressure mode: only high-pressure polygons receive a red fill
+  if (def.mode === 'economy'){
+    const E = await economyData(); ECON = E;
+    const D = drawEconomy(ctx, def, {X, Y, P, C});
+    if (C.coast) drawCoast(ctx, X, Y); if (C.names) placeNames(ctx, X, Y);
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, {economy:true, high:D.high, medium:D.medium, has:D.high > 0, sub:'NDBI Sentinel-2 sobre máscara predial OSM', unit:'presión económica', stats:[['Alta',D.stats?`${D.high} predios rojos`:'esperando Sentinel-2'],['Media',D.stats?`${D.medium} predios sin relleno`:'—'],['Baja',D.stats?`${D.low} predios sin relleno`:'—']], srcTxt:D.stats?'Copernicus Sentinel-2 L2A (ESA), vía Earth Search; mediana multitemporal y NDBI por predio':'Esperando cálculo de Sentinel-2', method:D.stats?'NDBI Sentinel-2 + etiqueta OSM de comercio/industria; cuantiles por predio; solo alta presión rellena en rojo':'Predios/huellas OSM como máscara, sin clasificación hasta completar Sentinel-2'}); } return;
+  }
+
+  // --- satellite mode
+  if (useSat(def)){
+    const D = drawSat(ctx, def, { X, Y, zf, cx, cy, P, C, baseKey, k });
+    ctx.restore(); if (!bare){ finish(); sheet(ctx, def, D); } return;
+  }
+
+  // --- data
+  const ramp = rampFn(def.ramp);
+  // one value per location: mean of the samples inside the selected period
+  const byLoc = new Map();
+  for (const r of activeRows()){ const v = valueOf(def, r); if (!isNum(v)) continue; const key = r.lat.toFixed(5) + ',' + r.lon.toFixed(5); const o = byLoc.get(key) || byLoc.set(key, { r, sum: 0, n: 0, src: new Set() }).get(key); o.sum += v; o.n++; if (r.fuente) o.src.add(r.fuente); }
+  const pts = [...byLoc.values()].map(o => ({ r: o.r, v: o.sum / o.n, n: o.n, src: o.src, f: featureOf(o.r) }));
+  pts.forEach(p => { p.x = X(p.r.lon); p.y = Y(p.r.lat); });
+  let lo = Infinity, hi = -Infinity;
+  const tr = v => def.log ? Math.log10(Math.max(v, 1e-9)) : v;
+  const inv = t => def.log ? 10 ** t : t;
+
+  const pathOf = f => { const p = new Path2D(); for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(X(c[0]), Y(c[1])) : p.moveTo(X(c[0]), Y(c[1]))); p.closePath(); } return p; };
+  const hatch = (() => { const c = document.createElement('canvas'); c.width = c.height = 8; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, 8); g.lineTo(8, 0); g.stroke(); return ctx.createPattern(c, 'repeat'); })();
+
+  // --- continuous field over the study perimeter, drawn as discrete classes with isolines
+  const peri = new Path2D(); P.forEach((p, i) => i ? peri.lineTo(X(p[0]), Y(p[1])) : peri.moveTo(X(p[0]), Y(p[1]))); peri.closePath();
+  // «Solo agua»: the field is shown over the sea and over the island's lagoons, marsh and mangrove, never over dry land
+  const landOut = new Path2D(); landOut.rect(-50, -50, MW + 100, LH + 100);
+  for (const f of S.land.features) for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? landOut.lineTo(X(c[0]), Y(c[1])) : landOut.moveTo(X(c[0]), Y(c[1]))); landOut.closePath(); }
+  const wetIn = new Path2D(); for (const f of S.hum.features) wetIn.addPath(pathOf(f));
+  const onWater = fn => { if (!C.water){ fn(); return; } ctx.save(); ctx.clip(landOut, 'evenodd'); fn(); ctx.restore(); ctx.save(); ctx.clip(wetIn); fn(); ctx.restore(); };
+  let classes = null, textured = false;
+  if (!pts.length){
+    onWater(() => { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(peri); ctx.fillStyle = hatch; ctx.fill(peri); });
+    lo = 0; hi = 1;
+  } else {
+    const step = Math.max(0.25, Math.min(2, 1.5 / k));
+    const gw = Math.ceil(MW / step) + 1, gh = Math.ceil(LH / step) + 1;
+    const PR = P.map(p => [X(p[0]), Y(p[1])]);
+    const px0 = Math.min(...PR.map(p => p[0])), px1 = Math.max(...PR.map(p => p[0])), py0 = Math.min(...PR.map(p => p[1])), py1 = Math.max(...PR.map(p => p[1]));
+    const F = new Float32Array(gw * gh).fill(NaN);
+    const tv = pts.map(p => tr(p.v)), half = S.pw / 2;
+    const dens = def.mode === 'density', h2 = (250 / mpp) ** 2, norm = 1e6 / (2 * Math.PI * 250 * 250);
+    const thiessen = S.method === 'thiessen' && !dens;
+    if (!dens){ lo = Math.min(...tv); hi = Math.max(...tv); if (hi === lo){ hi += 0.5; lo -= 0.5; } }
+    for (let j = 0; j < gh; j++){
+      const y = j * step; if (y < py0 - step || y > py1 + step) continue;
+      for (let i = 0; i < gw; i++){
+        const x = i * step; if (x < px0 - step || x > px1 + step) continue;
+        let v;
+        if (dens){ let s = 0; for (let q = 0; q < pts.length; q++){ const d2 = ((x - pts[q].x) ** 2 + (y - pts[q].y) ** 2) / h2; if (d2 < 16) s += pts[q].v * Math.exp(-d2 / 2); } v = s * norm; }
+        else if (thiessen){ let bd = Infinity; for (let q = 0; q < pts.length; q++){ const d2 = (x - pts[q].x) ** 2 + (y - pts[q].y) ** 2; if (d2 < bd){ bd = d2; v = tv[q]; } } }
+        else { let sw = 0, sv = 0; v = null; for (let q = 0; q < pts.length; q++){ const d2 = (x - pts[q].x) ** 2 + (y - pts[q].y) ** 2; if (d2 < 1e-6){ v = tv[q]; break; } const w = 1 / d2 ** half; sw += w; sv += w * tv[q]; } if (v === null) v = sv / sw; }
+        F[j * gw + i] = v;
+      }
+    }
+    if (dens){ lo = 0; hi = 0; for (const v of F) if (v > hi) hi = v; if (hi <= 0) hi = 1; }
+    const br = dens ? classBreaks(lo, hi, false) : quantBreaks(tv, def.log);
+    const nC = br.length - 1;
+    const cc = Array.from({ length: nC }, (_, c) => ramp(nC === 1 ? .6 : (c + .5) / nC));
+    const clsOf = v => { let c = 0; while (c < nC - 1 && v >= br[c + 1]) c++; return c; };
+    // fill: one texel per grid node, drawn without smoothing so class edges stay sharp
+    const off = document.createElement('canvas'); off.width = gw; off.height = gh;
+    const oc = off.getContext('2d'), im = oc.createImageData(gw, gh);
+    for (let q = 0; q < F.length; q++){ const v = F[q]; if (v !== v) continue; const c = cc[clsOf(v)]; im.data[q * 4] = c[0]; im.data[q * 4 + 1] = c[1]; im.data[q * 4 + 2] = c[2]; im.data[q * 4 + 3] = 255; }
+    textured = C.texture && SAT.ready;
+    if (textured){
+      const SH = shadeGrid({ zf, cx, cy }, step, gw, gh);
+      for (let q = 0; q < F.length; q++){ if (im.data[q * 4 + 3] === 0) continue; const fct = SH[q]; for (let c = 0; c < 3; c++) im.data[q * 4 + c] = Math.min(255, im.data[q * 4 + c] * fct); }
+    }
+    oc.putImageData(im, 0, 0);
+    ctx.save(); ctx.clip(peri);
+    ctx.globalAlpha = (textured || baseKey === 'none' || !C.base) ? 1 : .85; ctx.imageSmoothingEnabled = false;
+    onWater(() => ctx.drawImage(off, -step / 2, -step / 2, gw * step, gh * step));
+    ctx.globalAlpha = 1;
+    // isolines at every interior class break (marching squares)
+    const iso = new Path2D();
+    if (C.iso)
+    for (let b = 1; b < nC; b++){
+      const t = br[b];
+      for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++){
+        const a = F[j * gw + i], bb = F[j * gw + i + 1], c = F[(j + 1) * gw + i + 1], d = F[(j + 1) * gw + i];
+        if (a !== a || bb !== bb || c !== c || d !== d) continue;
+        const idx = (a >= t ? 8 : 0) | (bb >= t ? 4 : 0) | (c >= t ? 2 : 0) | (d >= t ? 1 : 0);
+        if (idx === 0 || idx === 15) continue;
+        const x = i * step, y = j * step, f = (p, q) => (t - p) / (q - p || 1e-9);
+        const T = [x + step * f(a, bb), y], R = [x + step, y + step * f(bb, c)], B = [x + step * f(d, c), y + step], L = [x, y + step * f(a, d)];
+        const seg = (p, q) => { iso.moveTo(p[0], p[1]); iso.lineTo(q[0], q[1]); };
+        switch (idx){
+          case 1: case 14: seg(L, B); break;
+          case 2: case 13: seg(B, R); break;
+          case 3: case 12: seg(L, R); break;
+          case 4: case 11: seg(T, R); break;
+          case 6: case 9: seg(T, B); break;
+          case 7: case 8: seg(L, T); break;
+          case 5: seg(L, T); seg(B, R); break;
+          case 10: seg(T, R); seg(L, B); break;
+        }
+      }
+    }
+    ctx.strokeStyle = 'rgba(27,42,51,.75)'; ctx.lineWidth = .9; onWater(() => ctx.stroke(iso));
+    ctx.restore();
+    classes = cc.map((c, i) => ({ c, a: dens ? br[i] : inv(br[i]), b: dens ? br[i + 1] : inv(br[i + 1]) }));
+  }
+  if (C.coast) drawCoast(ctx, X, Y);
+  if (C.wetlands) for (const f of S.hum.features){
+    const path = pathOf(f);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(path);
+    ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(path);
+  }
+
+  // perimeter line
+  ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath();
+  if (C.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
+
+  // wetland names
+  ctx.textAlign = 'center';
+  if (C.names) for (const g of grupos()){ const L = groupLabel(g, X, Y); ctx.textAlign = L.align; haloText(ctx, g, L.x, L.y, '600 14px "IBM Plex Sans Condensed", sans-serif', '#1b2a33'); }
+  ctx.textAlign = 'center';
+  if (C.names) placeNames(ctx, X, Y);
+
+  // points
+  for (const p of (def.mode === 'density' ? pts : pts)){
+    const rad = def.mode === 'density' ? 3 + 2.2 * Math.sqrt(isNum(p.v) ? p.v : 0) : 5;
+    p.rad = rad;
+    if (!C.points) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = def.mode === 'density' ? (isNum(p.v) && p.v > 0 ? '#1c1917' : '#ffffff') : rgb(classes ? classes[classOfValue(classes, p.v)].c : ramp(.5));
+    ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = '#ffffff'; ctx.stroke(); ctx.lineWidth = .8; ctx.strokeStyle = '#1b2a33'; ctx.stroke();
+    p.rad = rad;
+  }
+  // labels: greedy placement that avoids overlaps, with a leader line when moved away
+  if (C.labels){
+    const font = '500 12.5px "IBM Plex Mono", monospace', LHh = 14, boxes = pts.map(p => [p.x - p.rad, p.y - p.rad, p.x + p.rad, p.y + p.rad]);
+    ctx.font = font;
+    const hit = b => boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+    const colName = def.alt ? S.alt[def.n] : def.col;
+    for (const p of [...pts].sort((a, b) => a.y - b.y)){
+      if (!isNum(p.v)) continue;
+      const txt = (p.n === 1 && colName && p.r[colName + '_txt']) ? p.r[colName + '_txt'] : fmt(p.v, def.mode === 'density' ? 0 : def.dec);
+      const w = ctx.measureText(txt).width + 4;
+      let best = null;
+      for (const dist of [p.rad + 4, 22, 38, 56, 76]){
+        for (const a of [0, Math.PI, -Math.PI / 2, Math.PI / 2, -Math.PI / 4, Math.PI / 4, -3 * Math.PI / 4, 3 * Math.PI / 4]){
+          const ax = p.x + Math.cos(a) * dist, ay = p.y + Math.sin(a) * dist;
+          const x0 = Math.cos(a) < -0.1 ? ax - w : Math.abs(Math.cos(a)) <= 0.1 ? ax - w / 2 : ax;
+          const b = [x0, ay - LHh / 2, x0 + w, ay + LHh / 2];
+          if (b[0] < 4 || b[2] > MW - 4 || b[1] < 4 || b[3] > LH - 4 || hit(b)) continue;
+          best = { b, dist }; break;
+        }
+        if (best) break;
+      }
+      if (!best){ const x0 = p.x + p.rad + 4; best = { b: [x0, p.y - LHh / 2, x0 + w, p.y + LHh / 2], dist: 0 }; }
+      boxes.push(best.b);
+      if (best.dist > p.rad + 4){
+        const cx = Math.max(best.b[0], Math.min(p.x, best.b[2])), cy = Math.max(best.b[1], Math.min(p.y, best.b[3]));
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(cx, cy); ctx.strokeStyle = 'rgba(27,42,51,.7)'; ctx.lineWidth = .8; ctx.stroke();
+      }
+      ctx.textAlign = 'left';
+      haloText(ctx, txt, best.b[0] + 2, best.b[1] + LHh / 2 + 4.5, font, '#111');
+    }
+  }
+  ctx.restore();
+  if (bare) return;
+  finish();
+
+  // --- sheet panel
+  const srcIds = [...new Set(pts.flatMap(p => [...p.src]))];
+  sheet(ctx, def, {
+    lo, hi, inv, ramp, has: pts.length > 0, classes, textured,
+    sub: subOf(def), unit: unitOf(def), log: def.log, dec: def.mode === 'density' ? 1 : def.dec,
+    symbol: def.mode === 'density' ? 'Punto de conexión errada (tamaño = número)' : 'Punto de muestreo',
+    statsTitle: 'VALORES POR SECTOR COSTERO',
+    stats: sectors().map(g => { const vs = pts.filter(p => p.f === g).map(p => p.v); return [g, vs.length ? `n=${vs.length}  ${fmt(Math.min(...vs), def.dec)} – ${fmt(Math.max(...vs), def.dec)}` : 'sin dato']; }),
+    srcTxt: srcIds.length ? srcIds.map(id => (S.fuentes.find(f => f.id === id) || {}).corto || id).join('; ') : 'Sin datos para esta variable en las fuentes revisadas',
+    method: (def.mode === 'density' ? 'Densidad de kernel, radio 250 m' : S.method === 'thiessen' ? 'Polígonos de Thiessen' : 'IDW potencia ' + S.pw) + ', clases e isolíneas' + ' · ' + periodText() + (pts.some(p => p.n > 1) ? ' (promedio por punto)' : '')
+  });
+}
+
+// ---------------- Sentinel-2 ----------------
+// One spectral indicator per plano. Only 16 (MNDWI) is a direct measurement of the mapped quantity;
+// the others are relative, uncalibrated proxies used in the remote-sensing literature for that variable.
+const nd = (a, b) => (a - b) / (a + b);
+const SATDEF = {
+  1:  { idx: 'gb',    f: b => b.G / b.B,               sub: 'Relación verde/azul B3/B2 (proxy empírico de pH)' },
+  2:  { idx: 'ndci',  f: b => nd(b.E, b.R),            sub: 'NDCI · índice de clorofila (proxy de eutrofización)' },
+  3:  { idx: 'ndwi',  f: b => nd(b.G, b.N),            sub: 'NDWI (McFeeters) · agua superficial (contexto para OD)' },
+  4:  { idx: 'rg',    f: b => b.R / b.G,               sub: 'Relación rojo/verde B4/B3 (proxy empírico de fósforo)' },
+  5:  { idx: 'br',    f: b => b.B / b.R,               sub: 'Relación azul/rojo B2/B4 (proxy empírico de nitrógeno)' },
+  6:  { idx: 'ndmi',  f: b => nd(b.N, b.S1),           sub: 'NDMI · humedad de la superficie (contexto para DQO)' },
+  7:  { idx: 'rb',    f: b => b.R / b.B,               sub: 'Relación rojo/azul B4/B2 (proxy empírico de DBO5)' },
+  8:  { idx: 'gndvi', f: b => nd(b.N, b.G),            sub: 'GNDVI · actividad vegetal (contexto para biodegradabilidad)' },
+  9:  { idx: 'ndti',  f: b => nd(b.R, b.G),            sub: 'NDTI · índice de turbiedad (proxy)' },
+  10: { idx: 'red',   f: b => b.R,                     sub: 'Reflectancia roja B4 (proxy de sólidos en suspensión)' },
+  11: { idx: 'si',    f: b => Math.sqrt(Math.max(0, b.B * b.R)), sub: 'Índice de salinidad SI = √(B2·B4) (proxy de conductividad)' },
+  12: { idx: 'swr',   f: b => nd(b.S1, b.S2),          sub: 'Índice SWIR (B11−B12)/(B11+B12) (sensible a hidrocarburos)' },
+  13: { idx: 'ndvi',  f: b => nd(b.N, b.R),            sub: 'NDVI · cobertura vegetal (contexto sanitario)' },
+  14: { idx: 'savi',  f: b => 1.5 * (b.N - b.R) / (b.N + b.R + 0.5), sub: 'SAVI · vegetación ajustada al suelo (contexto sanitario)' },
+  15: { idx: 'stumpf', f: b => Math.log(1000 * b.B) / Math.log(1000 * b.G), sub: 'Relación logarítmica de Stumpf ln(B2)/ln(B3) (proxy de profundidad)' },
+  16: { idx: 'mndwi', f: b => nd(b.G, b.S1),           sub: 'MNDWI · humedad superficial; agua abierta si MNDWI > 0', area: true },
+  17: { idx: 'msi',   f: b => b.S1 / b.N,              sub: 'MSI · estrés hídrico B11/B8 (contexto para nivel freático)' },
+  18: { idx: 'ndbi',  f: b => nd(b.S1, b.N),           sub: 'NDBI · superficie construida (presión urbana, fuentes de vertimiento)' },
+  19: { idx: 'awei',  f: b => 4 * (b.G - b.S1) - (0.25 * b.N + 2.75 * b.S2), sub: 'AWEI · extracción de agua superficial (contexto para caudal)' },
+  20: { idx: 'bsi',   f: b => ((b.S1 + b.R) - (b.N + b.B)) / ((b.S1 + b.R) + (b.N + b.B)), sub: 'BSI · suelo desnudo (fuente de carga por escorrentía)' },
+  // Floating Debris Index (Biermann et al. 2020, Sci. Rep. 10:5364): NIR minus a baseline between B6 and B11
+  // interpolated at the NIR wavelength; λ in nm (B4 664.6, B8 832.8, B11 1613.7)
+  21: { idx: 'fdi',   f: b => b.N - (b.E2 + (b.S1 - b.E2) * (832.8 - 664.6) / (1613.7 - 664.6) * 10), sub: 'FDI · Floating Debris Index (Biermann et al. 2020): residuos flotantes, incluido plástico', water: true }
+};
+Object.values(SATDEF).forEach(d => { d.unit = d.area ? 'índice MNDWI' : 'índice ' + d.idx.toUpperCase(); });
+const SAT = { ready: false, cache: {} };
+function useSat(def){ return SATDEF[def.n] && S.src[def.n] === 'sat' && SAT.ready; }
+function satIdx(key){
+  if (SAT.cache[key]) return SAT.cache[key];
+  const d = Object.values(SATDEF).find(x => x.idx === key), N = SAT.W * SAT.H, out = new Float32Array(N), Bd = SAT.band, b = {};
+  for (let p = 0; p < N; p++){
+    b.B = Bd.B[p]; b.G = Bd.G[p]; b.R = Bd.R[p]; b.E = Bd.E[p]; b.E2 = Bd.E2[p]; b.N = Bd.N[p]; b.S1 = Bd.S1[p]; b.S2 = Bd.S2[p];
+    if (b.G !== b.G){ out[p] = NaN; continue; }
+    const v = d.f(b); out[p] = isFinite(v) ? v : NaN;
+  }
+  return (SAT.cache[key] = out);
+}
+function utmDef(epsg){ const s = epsg > 32700; return `+proj=utm +zone=${s ? epsg - 32700 : epsg - 32600}${s ? ' +south' : ''} +datum=WGS84 +units=m +no_defs`; }
+const itemEpsg = it => +(it.properties['proj:epsg'] || String(it.properties['proj:code'] || '').split(':')[1]);
+const BANDS = [['B', 'blue'], ['G', 'green'], ['R', 'red'], ['E', 'rededge1'], ['E2', 'rededge2'], ['N', 'nir'], ['S1', 'swir16'], ['S2', 'swir22']];
+async function runSentinel(){
+  const st = $('satstatus'), btn = $('satrun');
+  btn.disabled = true; SAT.ready = false;
+  try {
+    const P = S.perim, lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+    const bbox = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+    const d0 = $('sd0').value, d1 = $('sd1').value, nmax = +$('sn').value;
+    st.textContent = 'Buscando escenas Sentinel-2…';
+    let body = { collections: ['sentinel-2-c1-l2a'], bbox, datetime: `${d0}T00:00:00Z/${d1}T23:59:59Z`, limit: 100 }, url = 'https://earth-search.aws.element84.com/v1/search', feats = [];
+    for (let i = 0; i < 20; i++){
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error('Earth Search respondió ' + r.status);
+      const j = await r.json(); feats.push(...j.features);
+      const nx = (j.links || []).find(l => l.rel === 'next'); if (!nx || !j.features.length) break;
+      url = nx.href; body = nx.body || body;
+    }
+    // one item per date, least cloudy first
+    const byDate = {};
+    for (const f of feats){ const d = f.properties.datetime.slice(0, 10); if (!byDate[d] || f.properties['eo:cloud_cover'] < byDate[d].properties['eo:cloud_cover']) byDate[d] = f; }
+    const items = Object.values(byDate).filter(f => f.properties['eo:cloud_cover'] < 60).sort((a, b) => a.properties['eo:cloud_cover'] - b.properties['eo:cloud_cover']).slice(0, nmax);
+    if (!items.length) throw new Error('No hay escenas con menos de 60 % de nubes en ese periodo.');
+    const epsg = itemEpsg(items[0]), def = utmDef(epsg);
+    const corners = []; for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) corners.push(proj4('EPSG:4326', def, [bbox[0] + (bbox[2] - bbox[0]) * i / 4, bbox[1] + (bbox[3] - bbox[1]) * j / 4]));
+    const res = +$('sres').value;
+    const ub = [Math.floor(Math.min(...corners.map(c => c[0])) / res) * res, Math.floor(Math.min(...corners.map(c => c[1])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[0])) / res) * res, Math.ceil(Math.max(...corners.map(c => c[1])) / res) * res];
+    const W = (ub[2] - ub[0]) / res, H = (ub[3] - ub[1]) / res, N = W * H;
+    // raw uint16 stacks per band; cloud/shadow pixels stored as 0 (nodata)
+    const stacks = Object.fromEntries(BANDS.map(([k]) => [k, []])), scales = {};
+    let done = 0;
+    const read = async (a, box) => (await (await GeoTIFF.fromUrl(a.href)).readRasters({ bbox: box, width: W, height: H, fillValue: 0, interleave: true }));
+    const queue = items.slice();
+    await Promise.all(Array.from({ length: 4 }, async () => {
+      while (queue.length){
+        const it = queue.shift();
+        const e = itemEpsg(it), box = e === epsg ? ub : (() => { const d2 = utmDef(e); const cs = corners.map(c => proj4(def, d2, c)); return [Math.min(...cs.map(c => c[0])), Math.min(...cs.map(c => c[1])), Math.max(...cs.map(c => c[0])), Math.max(...cs.map(c => c[1]))]; })();
+        try {
+          const arrs = await Promise.all([...BANDS.map(([, a]) => read(it.assets[a], box)), read(it.assets.scl, box)]);
+          const scl = arrs[BANDS.length];
+          for (let p = 0; p < N; p++){ const q = scl[p]; if (q === 0 || q === 1 || q === 3 || q === 8 || q === 9 || q === 10) for (let k = 0; k < BANDS.length; k++) arrs[k][p] = 0; }
+          BANDS.forEach(([k, a], i) => { stacks[k].push(arrs[i]); if (!scales[k]){ const b = (it.assets[a]['raster:bands'] || [{}])[0]; scales[k] = [b.scale ?? 1, b.offset ?? 0]; } });
+        } catch (err){ console.warn(it.id, err); }
+        done++; st.textContent = `Leyendo Sentinel-2 (8 bandas + SCL)… ${done}/${items.length}`;
+      }
+    }));
+    if (!stacks.G.length) throw new Error('No se pudo leer ninguna escena Sentinel-2.');
+    st.textContent = 'Calculando mediana por banda…'; await new Promise(r => setTimeout(r, 0));
+    const med = (arrs, [s, o]) => { const out = new Float32Array(N), buf = new Uint16Array(arrs.length); for (let p = 0; p < N; p++){ let k = 0; for (const a of arrs){ const v = a[p]; if (v) buf[k++] = v; } if (!k){ out[p] = NaN; continue; } const sb = buf.subarray(0, k).sort(); const m = k % 2 ? sb[k >> 1] : (sb[k / 2 - 1] + sb[k / 2]) / 2; out[p] = m * s + o; } return out; };
+    SAT.band = {}; for (const [k] of BANDS) SAT.band[k] = med(stacks[k], scales[k]);
+    Object.assign(SAT, { W, H, res, ub, def, epsg, n: stacks.G.length, cache: {}, aff: null });
+    SAT.mndwi = satIdx('mndwi');
+    SAT.gray = new Float32Array(N); for (let p = 0; p < N; p++) SAT.gray[p] = (SAT.band.G[p] + SAT.band.R[p] + SAT.band.S1[p]) / 3;
+    { const v = Array.from(SAT.gray).filter(x => x === x).sort((a, b) => a - b); SAT.gLo = v[Math.floor(v.length * .02)]; SAT.gHi = v[Math.floor(v.length * .98)]; }
+    SAT.version = (SAT.version || 0) + 1; shadeCache.clear();
+    const dates = items.map(i => i.properties.datetime.slice(0, 10)).sort();
+    SAT.dates = [dates[0], dates[dates.length - 1]];
+    // water-body and land membership of every cell, rasterized on a canvas in the UTM grid (fast for long coastlines)
+    SAT.cellFeat = new Int8Array(N).fill(-1); SAT.cellLand = new Uint8Array(N);
+    const fwd = proj4('EPSG:4326', def), rc = document.createElement('canvas'); rc.width = W; rc.height = H;
+    const rg = rc.getContext('2d', { willReadFrequently: true });
+    const raster = (f, cb) => {
+      rg.clearRect(0, 0, W, H); rg.beginPath();
+      let x0 = W, y0 = H, x1 = 0, y1 = 0;
+      for (const r of rings(f.geometry)) r.forEach((c, i) => { const e = fwd.forward(c), x = (e[0] - ub[0]) / res, y = (ub[3] - e[1]) / res; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); i ? rg.lineTo(x, y) : rg.moveTo(x, y); });
+      rg.fillStyle = '#000'; rg.fill('evenodd');
+      x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); x1 = Math.min(W, Math.ceil(x1) + 1); y1 = Math.min(H, Math.ceil(y1) + 1);
+      if (x1 <= x0 || y1 <= y0) return;
+      const d = rg.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+      for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) if (d[((j - y0) * (x1 - x0) + (i - x0)) * 4 + 3] >= 128) cb(j * W + i);
+    };
+    S.land.features.forEach(f => raster(f, p => { SAT.cellLand[p] = 1; }));
+    S.hum.features.forEach((f, k) => raster(f, p => { if (SAT.cellFeat[p] < 0) SAT.cellFeat[p] = k; }));
+    SAT.ready = true;
+    st.textContent = `Listo · ${SAT.n} escenas Sentinel-2 L2A (${SAT.dates[0]} a ${SAT.dates[1]}) · mediana por banda a ${res} m · EPSG:${epsg}`;
+    await drawAll();
+  } catch (e){ st.textContent = e.message; console.error(e); }
+  btn.disabled = false;
+}
+function utmAffine(){
+  if (SAT.aff) return SAT.aff;
+  const P = S.perim, lons = P.map(p => p[0]), lats = P.map(p => p[1]);
+  const x0 = Math.min(...lons), x1 = Math.max(...lons), y0 = Math.min(...lats), y1 = Math.max(...lats);
+  const c = proj4('EPSG:4326', SAT.def), p0 = c.forward([x0, y0]), px = c.forward([x1, y0]), py = c.forward([x0, y1]);
+  const ax = (px[0] - p0[0]) / (x1 - x0), bx = (py[0] - p0[0]) / (y1 - y0), ay = (px[1] - p0[1]) / (x1 - x0), by = (py[1] - p0[1]) / (y1 - y0);
+  return (SAT.aff = { forward: ([lon, lat]) => [p0[0] + ax * (lon - x0) + bx * (lat - y0), p0[1] + ay * (lon - x0) + by * (lat - y0)] });
+}
+const shadeCache = new Map();
+function shadeGrid(g, step, gw, gh){
+  const key = [step, g.zf, g.cx, g.cy, SAT.version].join('|');
+  if (shadeCache.has(key)) return shadeCache.get(key);
+  const out = new Float32Array(gw * gh).fill(1);
+  const Z = TILE * 2 ** g.zf, conv = utmAffine(), { W, H, res, ub } = SAT, span = (SAT.gHi - SAT.gLo) || 1;
+  for (let j = 0; j < gh; j++){
+    const wy = j * step + g.cy - LH / 2, lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * wy / Z))) * 180 / Math.PI;
+    for (let i = 0; i < gw; i++){
+      const lon = (i * step + g.cx - MW / 2) / Z * 360 - 180;
+      const e = conv.forward([lon, lat]);
+      const gi = Math.floor((e[0] - ub[0]) / res), gj = Math.floor((ub[3] - e[1]) / res);
+      if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue;
+      const v = SAT.gray[gj * W + gi]; if (v !== v) continue;
+      const u = Math.max(0, Math.min(1, (v - SAT.gLo) / span));
+      out[j * gw + i] = 0.7 + 0.42 * u;
+    }
+  }
+  if (shadeCache.size > 4) shadeCache.clear();
+  shadeCache.set(key, out);
+  return out;
+}
+function drawSat(ctx, def, g){
+  const C = g.C, baseKey = g.baseKey;
+  const sd = SATDEF[def.n], A = satIdx(sd.idx), { W, H, res, ub } = SAT;
+  const ramp = rampFn(def.ramp);
+  const step = Math.max(0.25, Math.min(1, 1 / g.k)), ow = Math.ceil(MW / step), oh = Math.ceil(LH / step);
+  const Z = TILE * 2 ** g.zf;
+  const vals = new Float32Array(ow * oh).fill(NaN);
+  const conv = utmAffine();
+  for (let j = 0; j < oh; j++){
+    const wy = j * step + step / 2 + g.cy - LH / 2;
+    const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * wy / Z))) * 180 / Math.PI;
+    for (let i = 0; i < ow; i++){
+      const wx = i * step + step / 2 + g.cx - MW / 2;
+      const lon = wx / Z * 360 - 180;
+      const e = conv.forward([lon, lat]);
+      const gi = Math.floor((e[0] - ub[0]) / res), gj = Math.floor((ub[3] - e[1]) / res);
+      if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue;
+      const p = gj * W + gi;
+      if (sd.water && SAT.cellFeat[p] < 0 && (SAT.cellLand[p] || !(SAT.mndwi[p] > 0))) continue;   // debris index only over water: sea (MNDWI > 0, off land) and the island's water bodies
+      vals[j * ow + i] = A[p];
+    }
+  }
+  // robust limits
+  const v = []; for (let q = 0; q < vals.length; q++) if (vals[q] === vals[q]) v.push(vals[q]);
+  v.sort((a, b) => a - b);
+  let lo = v.length ? v[Math.floor(v.length * .02)] : 0, hi = v.length ? v[Math.min(v.length - 1, Math.floor(v.length * .98))] : 1;
+  if (hi <= lo) hi = lo + 0.05;
+  const off = document.createElement('canvas'); off.width = ow; off.height = oh;
+  const oc = off.getContext('2d'), im = oc.createImageData(ow, oh);
+  for (let q = 0; q < vals.length; q++){ const x = vals[q]; if (x !== x) continue; const c = ramp((x - lo) / (hi - lo)); im.data.set([c[0], c[1], c[2], 235], q * 4); }
+  oc.putImageData(im, 0, 0);
+  // wetlands backdrop + outline
+  for (const f of S.hum.features){
+    const p = new Path2D(); for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(g.X(c[0]), g.Y(c[1])) : p.moveTo(g.X(c[0]), g.Y(c[1]))); p.closePath(); }
+    f._p = p;
+  }
+  ctx.save(); ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath(); ctx.clip();
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, ow * step, oh * step); ctx.restore();
+  if (C.coast) drawCoast(ctx, g.X, g.Y);
+  if (C.wetlands) for (const f of S.hum.features){ ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke(f._p); ctx.lineWidth = 1.2; ctx.strokeStyle = '#1b2a33'; ctx.stroke(f._p); }
+  if (C.names) placeNames(ctx, g.X, g.Y);
+  ctx.beginPath(); g.P.forEach((p, i) => i ? ctx.lineTo(g.X(p[0]), g.Y(p[1])) : ctx.moveTo(g.X(p[0]), g.Y(p[1]))); ctx.closePath();
+  if (C.perimeter){ ctx.setLineDash([10, 5]); ctx.lineWidth = 2.4; ctx.strokeStyle = '#c0262d'; ctx.stroke(); ctx.setLineDash([]); }
+  // names + per-wetland stats
+  const stats = [];
+  const SEA = 'Mar y bahía';
+  for (const grp of [...grupos(), SEA]){
+    const sea = grp === SEA;
+    const fs = sea ? [] : S.hum.features.map((f, k) => [f, k]).filter(([f]) => f.properties.humedal === grp);
+    const ids = new Set(fs.map(([, k]) => k));
+    const inG = sea ? p => SAT.cellFeat[p] < 0 && !SAT.cellLand[p] && SAT.mndwi[p] > 0 : p => ids.has(SAT.cellFeat[p]);
+    let x = 0, y = 0, al = 'center';
+    if (!sea){
+      const L = groupLabel(grp, g.X, g.Y); x = L.x; y = L.y; al = L.align;
+      ctx.textAlign = al; if (C.names) haloText(ctx, grp, x, y, '600 14px "IBM Plex Sans Condensed", sans-serif', '#1b2a33');
+    }
+    let n = 0, s = 0, w = 0;
+    for (let p = 0; p < SAT.mndwi.length; p++) if (inG(p)){ n++; if (SAT.mndwi[p] > 0){ w++; s += A[p]; } }
+    const ha = w * res * res / 1e4, tot = n * res * res / 1e4;
+    let s2 = 0, n2 = 0; for (let p = 0; p < SAT.mndwi.length; p++) if (inG(p) && A[p] === A[p]){ s2 += A[p]; n2++; }
+    const mean = n2 ? s2 / n2 : NaN;
+    let txt = sd.area ? (sea ? `agua abierta ${fmt(ha, 0)} ha` : `agua abierta ${fmt(ha, 2)} de ${fmt(tot, 1)} ha`) : `media ${fmt(mean, 3)} · ${n2} píx.`;
+    stats.push([grp, txt]);
+    if (C.labels && !sea){ ctx.textAlign = al; haloText(ctx, sd.area ? `${fmt(ha, 2)} ha agua` : fmt(mean, 3), x, y + 20, '500 13px "IBM Plex Mono", monospace', '#111'); }
+  }
+  return {
+    lo, hi, inv: t => t, ramp, has: v.length > 0, sub: sd.sub, unit: sd.unit, log: false, dec: 2, statsTitle: 'VALORES POR CUERPO DE AGUA',
+    symbol: `Píxel Sentinel-2 de ${res} m` + (sd.water ? ' (solo sobre agua)' : ''), satNote: !sd.area,
+    stats, srcTxt: `Copernicus Sentinel-2 L2A (ESA), vía Earth Search (Element 84/AWS). Mediana de ${SAT.n} escenas ${SAT.dates[0]} a ${SAT.dates[1]} a ${res} m, máscara de nubes SCL`,
+    method: `Índice ${sd.idx.toUpperCase()} · ${res} m` + (sd.area ? ' · agua abierta: MNDWI > 0' : ' · indicador satelital relativo sin calibrar; no es una medición de la variable')
+  };
+}
+
+function drawCoast(ctx, X, Y){
+  const p = new Path2D();
+  for (const f of S.land.features) for (const r of rings(f.geometry)){ r.forEach((c, i) => i ? p.lineTo(X(c[0]), Y(c[1])) : p.moveTo(X(c[0]), Y(c[1]))); p.closePath(); }
+  ctx.lineWidth = 2.2; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke(p);
+  ctx.lineWidth = 1; ctx.strokeStyle = '#3d4b52'; ctx.stroke(p);
+}
+// villages (OSM place nodes) and the island name
+function placeNames(ctx, X, Y){
+  ctx.textAlign = 'center';
+  for (const pl of (window.LUGARES || [])){
+    const x = X(pl.lon), y = Y(pl.lat);
+    if (x < FR || x > MW - FR || y < FR || y > LH - FR) continue;
+    if (pl.tipo === 'isla'){ haloText(ctx, pl.nombre.toUpperCase(), x, y, '600 15px "IBM Plex Sans Condensed", sans-serif', '#2f3b33'); continue; }
+    ctx.beginPath(); ctx.rect(x - 3, y - 3, 6, 6); ctx.fillStyle = '#2f3b33'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.textAlign = pl.align || 'left'; haloText(ctx, pl.nombre, x + (pl.align === 'right' ? -8 : 8), y + 4.5, 'italic 500 13px "IBM Plex Sans", sans-serif', '#2f3b33'); ctx.textAlign = 'center';
+  }
+}
+function haloText(ctx, t, x, y, font, color){
+  ctx.font = font; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.strokeText(t, x, y); ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+const FR = 52; // width of the coordinate margin around the map
+function dms(v, pos, neg){
+  const h = v < 0 ? neg : pos; v = Math.abs(v);
+  let d = Math.floor(v), m = Math.floor((v - d) * 60), sec = Math.round(((v - d) * 60 - m) * 60);
+  if (sec === 60){ sec = 0; m++; } if (m === 60){ m = 0; d++; }
+  return `${d}°${m}'${sec}"${h}`;
+}
+function frame(ctx, g){
+  const Z = TILE * 2 ** g.zf;
+  const lonAt = x => (x + g.cx - MW / 2) / Z * 360 - 180;
+  const latAt = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + g.cy - LH / 2) / Z))) * 180 / Math.PI;
+  const xAt = lon => (lon + 180) / 360 * Z - g.cx + MW / 2;
+  const yAt = lat => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * Z - g.cy + LH / 2; };
+  const x0 = FR, x1 = MW - FR, y0 = FR, y1 = LH - FR;
+  // white margin
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, MW, LH); ctx.rect(x0, y0, x1 - x0, y1 - y0);
+  ctx.fillStyle = '#FFFFFF'; ctx.fill('evenodd');
+  ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.4; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  const steps = [15, 30, 60, 120, 300, 600].map(v => v / 3600);
+  const pick = span => steps.find(st => span / st <= 6) || steps[steps.length - 1];
+  const l0 = lonAt(x0), l1 = lonAt(x1), a0 = latAt(y1), a1 = latAt(y0);
+  const sl = pick(l1 - l0), sa = pick(a1 - a0);
+  ctx.fillStyle = '#1b2a33'; ctx.font = '12px "IBM Plex Sans", sans-serif';
+  ctx.beginPath();
+  for (let v = Math.ceil(l0 / sl) * sl; v <= l1; v += sl){
+    const x = xAt(v); if (x < x0 + 30 || x > x1 - 30) continue;
+    ctx.moveTo(x, y0); ctx.lineTo(x, y0 - 6); ctx.moveTo(x, y1); ctx.lineTo(x, y1 + 6);
+    ctx.textAlign = 'center';
+    ctx.fillText(dms(v, 'E', 'W'), x, y0 - 12); ctx.fillText(dms(v, 'E', 'W'), x, y1 + 22);
+  }
+  for (let v = Math.ceil(a0 / sa) * sa; v <= a1; v += sa){
+    const y = yAt(v); if (y < y0 + 30 || y > y1 - 30) continue;
+    ctx.moveTo(x0, y); ctx.lineTo(x0 - 6, y); ctx.moveTo(x1, y); ctx.lineTo(x1 + 6, y);
+    ctx.save(); ctx.translate(x0 - 12, y); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(dms(v, 'N', 'S'), 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(x1 + 20, y); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(dms(v, 'N', 'S'), 0, 0); ctx.restore();
+  }
+  ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+}
+function northArrow(ctx, x, y){
+  ctx.save(); ctx.translate(x, y);
+  ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(8, 10); ctx.lineTo(0, 4); ctx.closePath(); ctx.fillStyle = '#1b2a33'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-8, 10); ctx.lineTo(0, 4); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1b2a33'; ctx.font = '600 12px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('N', 0, 23);
+  ctx.restore();
+}
+function scaleBar(ctx, x, y, mpp){
+  const target = 220 * mpp; const nice = [100, 200, 250, 500, 1000, 2000]; let m = nice[0]; for (const n of nice) if (n <= target) m = n;
+  const L = m / mpp, seg = L / 4;
+  ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fillRect(x - 10, y - 26, L + 60, 40);
+  for (let i = 0; i < 4; i++){ ctx.fillStyle = i % 2 ? '#fff' : '#1b2a33'; ctx.fillRect(x + i * seg, y, seg, 7); }
+  ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x, y, L, 7);
+  ctx.fillStyle = '#1b2a33'; ctx.font = '11px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText('0', x, y - 5); ctx.fillText(m >= 1000 ? (m / 2000) + '' : (m / 2) + '', x + L / 2, y - 5);
+  ctx.textAlign = 'left'; ctx.fillText(m >= 1000 ? (m / 1000) + ' km' : m + ' m', x + L + 6, y + 7);
+}
+function wrap(ctx, text, x, y, maxW, lh, maxLines = 99){
+  const words = text.split(' '); let line = '', n = 0;
+  for (const w of words){
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line){ ctx.fillText(line, x, y); y += lh; line = w; if (++n >= maxLines - 1){ } }
+    else line = t;
+  }
+  if (line){ ctx.fillText(line, x, y); y += lh; }
+  return y;
+}
+function sheet(ctx, def, D){
+  const x0 = MW, w = LW - MW, px = x0 + 36, iw = w - 72;
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x0, 0, w, LH);
+  ctx.fillStyle = '#1b2a33'; ctx.fillRect(x0, 0, 3, LH);
+  ctx.textAlign = 'left';
+  let y = 56;
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 13px "IBM Plex Mono", monospace';
+  ctx.fillText(`PLANO ${String(def.n).padStart(2, '0')} / ${V.length}`, px, y); y += 34;
+  ctx.fillStyle = '#17201B'; ctx.font = '700 34px "IBM Plex Sans Condensed", sans-serif';
+  y = wrap(ctx, def.t, px, y, iw, 38);
+  ctx.fillStyle = '#4a5550'; ctx.font = '400 16px "IBM Plex Sans", sans-serif';
+  y = wrap(ctx, `${D.sub} · ${D.unit}`, px, y + 4, iw, 22) + 14;
+
+  // legend ramp
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11.5px "IBM Plex Sans", sans-serif';
+  ctx.fillText(('LEYENDA · ' + D.unit + (D.log ? ' (escala log)' : '')).toUpperCase(), px, y); y += 12;
+  const rw = iw, rh = 16;
+  const has = isFinite(D.lo) && isFinite(D.hi) && D.has;
+  if (D.economy){
+    y += 6;
+    const items = [['#d73027','ALTA · NDBI Sentinel-2 alto · único relleno'],['transparent','MEDIA/BAJA · NDBI Sentinel-2 menor · sin relleno']];
+    for (const [col,label] of items){ ctx.fillStyle=col; ctx.fillRect(px,y,26,16); ctx.strokeStyle='#6b7670'; ctx.lineWidth=.8; ctx.strokeRect(px,y,26,16); ctx.fillStyle='#17201B'; ctx.font='12.5px "IBM Plex Mono", monospace'; ctx.fillText(label,px+34,y+12.5); y+=24; }
+    y += 16;
+  } else if (D.classes){
+    y += 6;
+    const cols = D.classes.length > 5 ? 2 : 1, cw = iw / cols;
+    D.classes.forEach((c, i) => {
+      const cx = px + (i % cols) * cw, cy = y + Math.floor(i / cols) * 24;
+      ctx.fillStyle = rgb(c.c); ctx.fillRect(cx, cy, 26, 16); ctx.strokeStyle = '#6b7670'; ctx.lineWidth = .8; ctx.strokeRect(cx, cy, 26, 16);
+      ctx.fillStyle = '#17201B'; ctx.font = '12.5px "IBM Plex Mono", monospace'; ctx.textAlign = 'left';
+      ctx.fillText(`${fmt(c.a, D.dec)} – ${fmt(c.b, D.dec)}`, cx + 34, cy + 12.5);
+    });
+    y += Math.ceil(D.classes.length / cols) * 24 + 16;
+  } else {
+  for (let i = 0; i < rw; i++){ ctx.fillStyle = rgb(D.ramp(i / (rw - 1))); ctx.fillRect(px + i, y, 1.5, rh); }
+  ctx.strokeStyle = '#9aa39d'; ctx.lineWidth = 1; ctx.strokeRect(px, y, rw, rh);
+  ctx.fillStyle = '#17201B'; ctx.font = '12px "IBM Plex Mono", monospace';
+  for (let i = 0; i <= 4; i++){
+    const u = i / 4, tx = px + u * rw;
+    ctx.fillStyle = '#9aa39d'; ctx.fillRect(tx - .5, y + rh, 1, 5);
+    ctx.fillStyle = '#17201B'; ctx.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center';
+    ctx.fillText(has ? fmt(D.inv(D.lo + (D.hi - D.lo) * u), D.dec) : '–', tx, y + rh + 18);
+  }
+  y += rh + 44;
+  }
+  ctx.textAlign = 'left';
+
+  // symbols
+  const sym = (draw, label) => { draw(px + 12, y - 5); ctx.fillStyle = '#17201B'; ctx.font = '13px "IBM Plex Sans", sans-serif'; ctx.fillText(label, px + 34, y); y += 24; };
+  if (D.economy) sym((x, yy) => { ctx.fillStyle='#d73027'; ctx.fillRect(x-10,yy-6,20,12); ctx.strokeStyle='#a50f15'; ctx.strokeRect(x-10,yy-6,20,12); }, 'Predio de presión alta (único relleno de la lámina)');
+  if (!D.economy && (D.symbol.startsWith('Píxel') || S.conv.points)) sym((x, yy) => { if (D.symbol.startsWith('Píxel')){ ctx.fillStyle = rgb(D.ramp(.7)); ctx.fillRect(x - 6, yy - 6, 12, 12); return; } ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fillStyle = rgb(D.ramp(.7)); ctx.fill(); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.stroke(); }, D.symbol);
+  if (S.conv.wetlands) sym((x, yy) => { ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1.6; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Laguna, ciénaga o manglar (OSM)');
+  if (S.conv.coast) sym((x, yy) => { ctx.strokeStyle = '#3d4b52'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x - 11, yy + 2); ctx.bezierCurveTo(x - 4, yy - 5, x + 3, yy + 5, x + 11, yy - 2); ctx.stroke(); }, 'Línea de costa (OSM)');
+  if (!D.economy && S.conv.water && D.classes) sym((x, yy) => { ctx.fillStyle = '#e9ece6'; ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#3d4b52'; ctx.lineWidth = .8; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Tierra firme: sin superficie interpolada');
+  if (D.classes && S.conv.iso) sym((x, yy) => { ctx.strokeStyle = 'rgba(27,42,51,.75)'; ctx.lineWidth = .9; ctx.beginPath(); ctx.moveTo(x - 11, yy + 3); ctx.bezierCurveTo(x - 4, yy - 6, x + 4, yy + 6, x + 11, yy - 3); ctx.stroke(); }, 'Isolínea en cada límite de clase');
+  if (S.conv.perimeter) sym((x, yy) => { ctx.setLineDash([6, 3]); ctx.strokeStyle = '#c0262d'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - 11, yy); ctx.lineTo(x + 11, yy); ctx.stroke(); ctx.setLineDash([]); }, 'Perímetro de estudio');
+  if (D.textured) sym((x, yy) => { const g = ctx.createLinearGradient(x - 10, 0, x + 10, 0); g.addColorStop(0, rgb(D.ramp(.6).map(v => v * .55))); g.addColorStop(1, rgb(D.ramp(.6))); ctx.fillStyle = g; ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = .8; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sombreado: brillo Sentinel-2 10 m (no cambia el valor)');
+  if (!D.has) sym((x, yy) => { ctx.fillStyle = '#fff'; ctx.fillRect(x - 10, yy - 6, 20, 12); const c = document.createElement('canvas'); c.width = c.height = 6; const g = c.getContext('2d'); g.strokeStyle = 'rgba(80,80,80,.6)'; g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.stroke(); ctx.fillStyle = ctx.createPattern(c, 'repeat'); ctx.fillRect(x - 10, yy - 6, 20, 12); ctx.strokeStyle = '#1b2a33'; ctx.lineWidth = 1; ctx.strokeRect(x - 10, yy - 6, 20, 12); }, 'Sin dato en las fuentes');
+  y += 8;
+
+  // stats by wetland
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11.5px "IBM Plex Sans", sans-serif'; ctx.fillText(D.statsTitle || 'VALORES POR SECTOR', px, y); y += 20;
+  ctx.font = '12.5px "IBM Plex Mono", monospace';
+  for (const [g, txt] of D.stats){
+    ctx.fillStyle = '#17201B'; ctx.textAlign = 'left'; ctx.fillText(g, px, y);
+    ctx.textAlign = 'right'; ctx.fillText(txt, px + iw, y);
+    y += 20;
+  }
+  ctx.textAlign = 'left'; y += 10;
+
+  // description
+  ctx.fillStyle = '#33403A'; ctx.font = '14px "IBM Plex Sans", sans-serif';
+  y = wrap(ctx, def.d, px, y, iw, 20);
+  if (D.satNote){ ctx.fillStyle = '#8a5a00'; ctx.font = '500 13px "IBM Plex Sans", sans-serif'; y = wrap(ctx, 'Indicador satelital relativo, sin calibrar: muestra la variación espectral asociada, no el valor de «' + def.t + '» en ' + def.u + '. Los valores medidos están en la fuente «Muestreo en campo».', px, y + 8, iw, 18); }
+
+  // cartouche
+  const srcTxt = D.srcTxt;
+  let cy = LH - 170;
+  ctx.fillStyle = '#d4dbd3'; ctx.fillRect(px, cy - 22, iw, 1);
+  ctx.fillStyle = '#6b7670'; ctx.font = '500 11px "IBM Plex Sans", sans-serif';
+  ctx.fillText('ISLA DE TIERRA BOMBA · CARTAGENA DE INDIAS (BOLÍVAR)', px, cy); cy += 18;
+  ctx.fillStyle = '#33403A'; ctx.font = '12px "IBM Plex Sans", sans-serif';
+  cy = wrap(ctx, 'Datos: ' + srcTxt, px, cy, iw, 16);
+  cy = wrap(ctx, 'Costa, lagunas y manglar: OpenStreetMap (ODbL). Perímetro: ' + (S.perimName || 'perimetro_tierrabomba.kml') + '.', px, cy, iw, 16);
+  cy = wrap(ctx, `WGS84 / Web Mercator (EPSG:3857) · ${D.method} · ${new Date().toISOString().slice(0, 10)}`, px, cy, iw, 16);
+}
+
+// ---------------- page ----------------
+const cards = $('cards'), cover = $('cover');
+const canvases = {};
+function build(){
+  cover.innerHTML = ''; cards.innerHTML = '';
+  for (const def of V){
+    const a = document.createElement('a'); a.href = '#plano-' + def.n; a.id = 'cv-' + def.n;
+    a.innerHTML = `<span class="sw" style="background:linear-gradient(90deg,${def.ramp.join(',')})"></span><b>${String(def.n).padStart(2, '0')}</b><span>${def.t}</span>`;
+    cover.append(a);
+    const card = document.createElement('article'); card.className = 'card'; card.id = 'plano-' + def.n;
+    const cv = document.createElement('canvas'); cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `Plano ${def.n}: ${def.t}`);
+    canvases[def.n] = cv;
+    const bar = document.createElement('div'); bar.className = 'bar';
+    let altHTML = '';
+    if (def.alt) altHTML = `<label class="check" for="alt-${def.n}">${def.alt.label}</label><select id="alt-${def.n}">${def.alt.opts.map(o => `<option value="${o[0]}"${S.alt[def.n] === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>`;
+    if (SATDEF[def.n]) altHTML += `<label class="check" for="src-${def.n}">Fuente</label><select id="src-${def.n}"><option value="campo"${S.src[def.n] === 'campo' ? ' selected' : ''}>Muestreo en campo</option><option value="sat"${S.src[def.n] === 'sat' ? ' selected' : ''}>Sentinel-2 (Copernicus)</option></select>`;
+    bar.innerHTML = `<div class="left"><span class="t">${String(def.n).padStart(2, '0')} · ${def.t}</span><span class="n" id="cnt-${def.n}"></span>${altHTML}</div><div class="btns" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ghost" id="bare-${def.n}">PNG solo plano</button><button type="button" id="dl-${def.n}">Descargar PNG</button></div>`;
+    card.append(cv, bar); cards.append(card);
+    $('dl-' + def.n).addEventListener('click', () => download(def));
+    $('bare-' + def.n).addEventListener('click', () => downloadBare(def));
+    if (def.alt) $('alt-' + def.n).addEventListener('change', e => { S.alt[def.n] = e.target.value; draw(def); });
+    if (SATDEF[def.n]) $('src-' + def.n).addEventListener('change', e => { S.src[def.n] = e.target.value; draw(def); });
+  }
+}
+async function draw(def){
+  await render(canvases[def.n], def, 0.8);
+  const n = def.mode === 'economy' ? 1 : activeRows().filter(r => isNum(valueOf(def, r))).length;
+  const sat = useSat(def);
+  $('cnt-' + def.n).textContent = def.mode === 'economy' ? 'OSM · predios económicos' : (sat ? `Sentinel-2 · ${SAT.n} escenas` : (S.src[def.n] === 'sat' ? 'Sentinel-2 calculándose…' : n ? `${n} mediciones en el periodo` : 'sin datos de campo en el periodo'));
+  $('cv-' + def.n).classList.toggle('empty', !n && !sat);
+}
+async function drawAll(){
+  $('status').textContent = 'Dibujando planos…';
+  for (const def of V) await draw(def);
+  $('status').textContent = `${activeRows().length} de ${S.rows.length} mediciones en el periodo · ${new Set(S.rows.map(r => r.fuente).filter(Boolean)).size} fuentes · mapa base ${$('base').selectedOptions[0].text}`;
+  $('zipall').disabled = false; $('zipbare').disabled = false;
+}
+const fileName = def => `plano_${String(def.n).padStart(2, '0')}_${def.t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_$/, '')}.png`;
+async function toBlobBare(def){
+  const k = +$('res').value * LW / MW, c = document.createElement('canvas');
+  await render(c, def, k, { bare: true });
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('No se pudo generar la imagen.')), 'image/png'));
+}
+async function toBlob(def){
+  const c = document.createElement('canvas');
+  await render(c, def, +$('res').value);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('No se pudo generar la imagen.')), 'image/png'));
+}
+function save(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function downloadBare(def){
+  const btn = $('bare-' + def.n); btn.disabled = true; btn.textContent = 'Generando…';
+  try { save(await toBlobBare(def), fileName(def).replace('.png', '_solo.png')); btn.textContent = 'Descargado'; }
+  catch (e){ btn.textContent = 'Error'; $('status').textContent = e.message; }
+  setTimeout(() => { btn.disabled = false; btn.textContent = 'PNG solo plano'; }, 1500);
+}
+async function download(def){
+  const btn = $('dl-' + def.n); btn.disabled = true; btn.textContent = 'Generando…';
+  try { save(await toBlob(def), fileName(def)); btn.textContent = 'Descargado'; }
+  catch (e){ btn.textContent = 'Error'; $('status').textContent = e.message; }
+  setTimeout(() => { btn.disabled = false; btn.textContent = 'Descargar PNG'; }, 1500);
+}
+$('zipall').addEventListener('click', async () => {
+  const btn = $('zipall'); btn.disabled = true;
+  try {
+    const zip = new JSZip();
+    for (const def of V){ btn.textContent = `Generando ${def.n}/${V.length}…`; zip.file(fileName(def), await toBlob(def)); }
+    btn.textContent = 'Comprimiendo…';
+    save(await zip.generateAsync({ type: 'blob' }), 'planos_tierrabomba.zip');
+  } catch (e){ $('status').textContent = e.message; }
+  btn.textContent = 'Descargar los 22 (ZIP)'; btn.disabled = false;
+});
+
+$('zipbare').addEventListener('click', async () => {
+  const btn = $('zipbare'); btn.disabled = true;
+  try {
+    const zip = new JSZip();
+    for (const def of V){ btn.textContent = `Generando ${def.n}/${V.length}…`; zip.file(fileName(def).replace('.png', '_solo.png'), await toBlobBare(def)); }
+    btn.textContent = 'Comprimiendo…';
+    save(await zip.generateAsync({ type: 'blob' }), 'planos_solos_tierrabomba.zip');
+  } catch (e){ $('status').textContent = e.message; }
+  btn.textContent = '22 planos solos (ZIP)'; btn.disabled = false;
+});
+$('base').addEventListener('change', e => { S.base = e.target.value; drawAll(); });
+$('pw').addEventListener('change', e => { S.pw = +e.target.value; drawAll(); });
+$('meth').addEventListener('change', e => { S.method = e.target.value; $('pw').disabled = S.method === 'thiessen'; drawAll(); });
+const CONV = [['base', 'Mapa base'], ['texture', 'Textura Sentinel-2'], ['iso', 'Isolíneas'], ['points', 'Puntos de muestreo'], ['labels', 'Valores'], ['water', 'Solo agua'], ['wetlands', 'Lagunas y manglar'], ['coast', 'Línea de costa'], ['names', 'Nombres'], ['perimeter', 'Perímetro'], ['grid', 'Coordenadas'], ['north', 'Norte'], ['scale', 'Escala gráfica']];
+$('convs').innerHTML = CONV.map(([k, t]) => `<label for="cv_${k}"><input type="checkbox" id="cv_${k}" data-k="${k}"${S.conv[k] ? ' checked' : ''}> ${t}</label>`).join('');
+$('convs').addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; S.conv[k] = e.target.checked; drawAll(); });
+$('csvfile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const rows = parseCSV(await f.text());
+    if (!rows.length) throw new Error('El CSV no tiene filas con columnas lat y lon.');
+    S.rows = rows; S.dataName = f.name; setPill(false); { const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; } drawAll();
+  } catch (err){ $('status').textContent = err.message; }
+});
+$('kmlfile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { S.perim = parseKML(await f.text()); S.perimName = f.name; drawAll(); }
+  catch (err){ $('status').textContent = err.message; }
+});
+function setPill(builtin){
+  $('datalabel').textContent = builtin ? `Datos reales compilados · ${S.rows.length} puntos` : `Tu archivo: ${S.dataName} · ${S.rows.length} puntos`;
+}
+function renderSources(){
+  $('fuentes').innerHTML = S.fuentes.length ? S.fuentes.map(f => `<li><b>${f.id}</b> · ${f.titulo}${f.url ? ` · <a href="${f.url}" target="_blank" rel="noopener">enlace</a>` : ''}</li>`).join('') : '<li>Sin fuentes cargadas.</li>';
+}
+
+build();
+S.rows = parseCSV(window.MUESTREO || 'punto,lat,lon\n');
+setPill(true); renderSources();
+$('satrun').addEventListener('click', runSentinel);
+const setAll = v => { for (const d of V){ if (d.mode === 'economy') continue; S.src[d.n] = v; const el = $('src-' + d.n); if (el) el.value = v; } drawAll(); };
+$('allcampo').addEventListener('click', () => setAll('campo'));
+$('allsat').addEventListener('click', () => setAll('sat'));
+const onPeriod = () => { drawAll(); };
+$('p0').addEventListener('change', onPeriod); $('p1').addEventListener('change', onPeriod);
+$('pall').addEventListener('click', () => { const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; drawAll(); });
+{ const [a, b] = dataSpan(); $('p0').value = a; $('p1').value = b; }
+document.fonts.ready.then(async () => { await drawAll(); runSentinel(); });
+})();
+</script>
+</body>
+</html>

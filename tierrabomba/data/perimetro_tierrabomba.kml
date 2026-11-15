@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document><name>perimetro_tierrabomba</name>
+  <Placemark><name>Perímetro de estudio · Isla de Tierra Bomba y aguas costeras</name>
+    <Style><LineStyle><color>FF2d26c0</color><width>2.5</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+    <Polygon><outerBoundaryIs><LinearRing><coordinates>-75.608,10.306 -75.526,10.306 -75.526,10.399 -75.608,10.399 -75.608,10.306</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Document></kml>

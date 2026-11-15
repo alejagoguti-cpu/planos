@@ -2,6 +2,8 @@
 
 21 planos temáticos de calidad y cantidad de agua (incluido uno de residuos plásticos) para los humedales **La Vaca**, **El Burro** y **Techo** (localidad de Kennedy, Bogotá), dentro del perímetro `data/perimetro_kennedy_polygon2.kml`. Cada plano tiene su propia rampa de color y se descarga como PNG en 8K: completo con hoja y convenciones (7680 × 5120 px) o «solo plano», sin nada más y con fondo transparente fuera del perímetro (7680 × 7680 px); también en ZIP con los 21 o todos juntos en un ZIP.
 
+**Tierra Bomba (Cartagena):** la misma herramienta para la isla de Tierra Bomba y sus aguas costeras está en [`tierrabomba/`](tierrabomba/) (datos REDCAM del INVEMAR, 1996–2025).
+
 Abre `index.html` en el navegador (o publícalo con GitHub Pages: *Settings → Pages → Deploy from branch → main*).
 
 ## Datos
